@@ -15,7 +15,7 @@ export default function Exercise() {
   const intervalMs = (profile?.pulseInterval ?? 1.5) * 1000
 
   const { state, elapsed, start, pause, resume, stop, reset, skip } = useExercise(target, intervalMs)
-  const { squeezeUp, releaseDown, fastBeep, breakChime, completionFanfare, initAudio } = useSound()
+  const { squeezeChime, releaseChime, fastBeep, breakSound, completionFanfare, initAudio } = useSound()
   const [showCompletion, setShowCompletion] = useState(false)
   const [pointsEarned, setPointsEarned] = useState(0)
   const prevPhase = useRef(state.phase)
@@ -28,14 +28,15 @@ export default function Exercise() {
 
     if (prev === curr) return
 
-    // Warmup: ascending tone on squeeze, descending on release
-    if (curr === 'warmupA_hold' || curr === 'warmupB_hold') squeezeUp()
-    if (curr === 'warmupA_rest' || curr === 'warmupB_rest') releaseDown()
+    // Warmup: 3-note ascending chime on squeeze, descending on release
+    if (curr === 'warmupA_hold' || curr === 'warmupB_hold') squeezeChime()
+    if (curr === 'warmupA_rest' || curr === 'warmupB_rest') releaseChime()
 
     // Fast pulses: sharp beep on every tick
     if (curr === 'pulse_tick') fastBeep()
 
-    if (isBreakPhase(curr)) breakChime()
+    // Breaks: distinct long melody
+    if (isBreakPhase(curr)) breakSound()
     if (curr === 'completed') {
       completionFanfare()
       saveExercise()

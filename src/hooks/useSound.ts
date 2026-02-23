@@ -12,10 +12,10 @@ export function useSound() {
   const getSounds = useCallback(() => {
     if (!sounds.current) {
       sounds.current = {
-        up: createAudio('/up.mp3'),
-        down: createAudio('/down.mp3'),
+        chimeUp: createAudio('/chime-up.mp3'),
+        chimeDown: createAudio('/chime-down.mp3'),
         beep: createAudio('/beep.mp3'),
-        break: createAudio('/break.mp3'),
+        breakStart: createAudio('/break-start.mp3'),
         complete: createAudio('/complete.mp3'),
       }
     }
@@ -29,10 +29,10 @@ export function useSound() {
     s.play().catch(() => {})
   }, [getSounds])
 
-  const squeezeUp = useCallback(() => play('up'), [play])
-  const releaseDown = useCallback(() => play('down'), [play])
+  const squeezeChime = useCallback(() => play('chimeUp'), [play])
+  const releaseChime = useCallback(() => play('chimeDown'), [play])
   const fastBeep = useCallback(() => play('beep'), [play])
-  const breakChime = useCallback(() => play('break'), [play])
+  const breakSound = useCallback(() => play('breakStart'), [play])
   const completionFanfare = useCallback(() => play('complete'), [play])
 
   const initAudio = useCallback(() => {
@@ -43,5 +43,5 @@ export function useSound() {
     })
   }, [getSounds])
 
-  return { squeezeUp, releaseDown, fastBeep, breakChime, completionFanfare, initAudio }
+  return { squeezeChime, releaseChime, fastBeep, breakSound, completionFanfare, initAudio }
 }
