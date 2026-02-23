@@ -117,18 +117,20 @@ export default function Exercise() {
 
       {isBreakPhase(phase) && <RestBreak state={state} />}
 
-      <div className="flex gap-4 mt-8">
+      <div className="w-full px-6 mt-8">
         {phase === 'idle' && (
-          <button
-            onClick={handleStart}
-            className="bg-primary text-white font-bold rounded-full px-10 py-4 text-lg active:scale-95 transition-transform"
-          >
-            Start
-          </button>
+          <div className="flex justify-center">
+            <button
+              onClick={handleStart}
+              className="bg-primary text-white font-bold rounded-full px-10 py-4 text-lg active:scale-95 transition-transform"
+            >
+              Start
+            </button>
+          </div>
         )}
 
         {isRunning && (
-          <>
+          <div className="flex gap-3">
             <button
               onClick={isPaused ? resume : pause}
               className="flex-1 bg-surface border border-border text-text font-semibold rounded-full py-3 active:scale-95 transition-transform"
@@ -147,16 +149,18 @@ export default function Exercise() {
             >
               Stop
             </button>
-          </>
+          </div>
         )}
 
         {phase === 'completed' && !showCompletion && (
-          <button
-            onClick={() => setShowCompletion(true)}
-            className="bg-primary text-white font-bold rounded-full px-10 py-4 text-lg active:scale-95 transition-transform"
-          >
-            View Results
-          </button>
+          <div className="flex justify-center">
+            <button
+              onClick={() => setShowCompletion(true)}
+              className="bg-primary text-white font-bold rounded-full px-10 py-4 text-lg active:scale-95 transition-transform"
+            >
+              View Results
+            </button>
+          </div>
         )}
       </div>
 
