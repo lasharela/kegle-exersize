@@ -1,0 +1,61 @@
+import { getPhaseColor, getPhaseLabel, getProgressPercent } from '../lib/exercise-engine'
+import type { ExerciseState } from '../lib/types'
+
+interface Props {
+  state: ExerciseState
+}
+
+export default function PulseCircle({ state }: Props) {
+  const { phase, timeRemaining } = state
+  const color = getPhaseColor(phase)
+  const label = getPhaseLabel(phase)
+  const progress = getProgressPercent(state)
+
+  const isSqueeze = phase === 'warmupA_hold' || phase === 'warmupB_hold' || phase === 'pulse_squeeze'
+  const scale = isSqueeze ? 1.15 : 1
+
+  const radius = 100
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference - (progress / 100) * circumference
+
+  return (
+    <div className="relative flex items-center justify-center">
+      <svg width="260" height="260" className="absolute">
+        <circle
+          cx="130" cy="130" r={radius}
+          fill="none"
+          stroke="#333"
+          strokeWidth="6"
+        />
+        <circle
+          cx="130" cy="130" r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          transform="rotate(-90 130 130)"
+          className="transition-all duration-1000"
+        />
+      </svg>
+
+      <div
+        className="w-48 h-48 rounded-full flex flex-col items-center justify-center transition-transform duration-300"
+        style={{ transform: `scale(${scale})`, backgroundColor: `${color}20` }}
+      >
+        <span className="text-4xl font-bold" style={{ color }}>
+          {phase === 'idle' ? '' : Math.ceil(timeRemaining)}
+        </span>
+        <span className="text-lg font-semibold mt-1" style={{ color }}>
+          {label}
+        </span>
+        {(phase === 'pulse_squeeze' || phase === 'pulse_release' || phase === 'pulse_break') && (
+          <span className="text-text-dim text-sm mt-1">
+            {state.pulsesCompleted} / {state.targetPulses}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
