@@ -2,7 +2,7 @@ import { useAuth } from '../context/AuthContext'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 export default function Header() {
-  const { profile, user } = useAuth()
+  const { profile, streakDays, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -11,9 +11,17 @@ export default function Header() {
 
   return (
     <header className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-      <div className="flex items-center gap-2">
-        <span className="text-green font-bold text-lg">{profile?.totalPoints ?? 0}</span>
-        <span className="text-text-dim text-xs">pts</span>
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1.5">
+          <span className="text-green font-bold text-lg">{profile?.totalPoints ?? 0}</span>
+          <span className="text-text-dim text-xs">pts</span>
+        </div>
+        {streakDays > 0 && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-yellow font-bold text-lg">{streakDays}</span>
+            <span className="text-text-dim text-xs">day streak</span>
+          </div>
+        )}
       </div>
 
       <button

@@ -1,11 +1,12 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react'
 import { ID, Query, Permission, Role, type Models } from 'appwrite'
-import { account, databases, DATABASE_ID, PROFILES_COLLECTION } from '../lib/appwrite'
-import type { Profile } from '../lib/types'
+import { account, databases, DATABASE_ID, PROFILES_COLLECTION, EXERCISES_COLLECTION } from '../lib/appwrite'
+import type { Profile, Exercise } from '../lib/types'
 
 interface AuthState {
   user: Models.User<Models.Preferences> | null
   profile: Profile | null
+  streakDays: number
   loading: boolean
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, name: string, initials: string) => Promise<void>
@@ -19,7 +20,32 @@ const AuthContext = createContext<AuthState | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [streakDays, setStreakDays] = useState(0)
   const [loading, setLoading] = useState(true)
+
+  const fetchStreak = useCallback(async (userId: string) => {
+    try {
+      const res = await databases.listDocuments(DATABASE_ID, EXERCISES_COLLECTION, [
+        Query.equal('userId', userId),
+        Query.equal('completed', true),
+        Query.orderDesc('date'),
+        Query.limit(100),
+      ])
+      const dates = new Set((res.documents as unknown as Exercise[]).map((e) => e.date))
+      const today = new Date().toISOString().split('T')[0]
+      if (!dates.has(today)) { setStreakDays(0); return }
+      let streak = 1
+      const d = new Date()
+      while (true) {
+        d.setDate(d.getDate() - 1)
+        if (dates.has(d.toISOString().split('T')[0])) streak++
+        else break
+      }
+      setStreakDays(streak)
+    } catch {
+      setStreakDays(0)
+    }
+  }, [])
 
   const fetchProfile = useCallback(async (userId: string) => {
     try {
@@ -39,17 +65,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     account.get()
       .then(async (u) => {
         setUser(u)
-        await fetchProfile(u.$id)
+        await Promise.all([fetchProfile(u.$id), fetchStreak(u.$id)])
       })
       .catch(() => setUser(null))
       .finally(() => setLoading(false))
-  }, [fetchProfile])
+  }, [fetchProfile, fetchStreak])
 
   const login = async (email: string, password: string) => {
     await account.createEmailPasswordSession(email, password)
     const u = await account.get()
     setUser(u)
-    await fetchProfile(u.$id)
+    await Promise.all([fetchProfile(u.$id), fetchStreak(u.$id)])
   }
 
   const register = async (email: string, password: string, name: string, initials: string) => {
@@ -94,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const refreshProfile = async () => {
-    if (user) await fetchProfile(user.$id)
+    if (user) await Promise.all([fetchProfile(user.$id), fetchStreak(user.$id)])
   }
 
   const updateProfile = async (data: Partial<Profile>) => {
@@ -106,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, login, register, logout, refreshProfile, updateProfile }}>
+    <AuthContext.Provider value={{ user, profile, streakDays, loading, login, register, logout, refreshProfile, updateProfile }}>
       {children}
     </AuthContext.Provider>
   )
