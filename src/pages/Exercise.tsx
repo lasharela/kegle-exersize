@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
-import { ID, Permission, Role } from 'appwrite'
+import { ID, Permission, Role, Query } from 'appwrite'
 import { useAuth } from '../context/AuthContext'
 import { useExercise } from '../hooks/useExercise'
 import { useSound } from '../hooks/useSound'
 import { isBreakPhase } from '../lib/exercise-engine'
 import { databases, DATABASE_ID, EXERCISES_COLLECTION } from '../lib/appwrite'
+import type { Exercise as ExerciseDoc } from '../lib/types'
 import PulseCircle from '../components/PulseCircle'
 import RestBreak from '../components/RestBreak'
 import CompletionOverlay from '../components/CompletionOverlay'
@@ -18,6 +19,7 @@ export default function Exercise() {
   const { squeezeChime, releaseChime, fastBeep, breakSound, completionFanfare, initAudio } = useSound()
   const [showCompletion, setShowCompletion] = useState(false)
   const [pointsEarned, setPointsEarned] = useState(0)
+  const [streakDays, setStreakDays] = useState(0)
   const prevPhase = useRef(state.phase)
   const prevPulses = useRef(state.pulsesCompleted)
   const startTimeRef = useRef<string>('')
@@ -89,11 +91,41 @@ export default function Exercise() {
         totalPoints: profile.totalPoints + points,
         totalPulses: profile.totalPulses + state.pulsesCompleted,
       })
+
+      // Fetch exercises to compute streak
+      const res = await databases.listDocuments(DATABASE_ID, EXERCISES_COLLECTION, [
+        Query.equal('userId', profile.userId),
+        Query.orderDesc('date'),
+        Query.limit(100),
+      ])
+      const docs = res.documents as unknown as ExerciseDoc[]
+      setStreakDays(computeStreak(docs))
     } catch (e) {
       console.error('Failed to save exercise:', e)
     }
 
     setShowCompletion(true)
+  }
+
+  const computeStreak = (exercises: ExerciseDoc[]): number => {
+    const completedDates = new Set(
+      exercises.filter((e) => e.completed).map((e) => e.date)
+    )
+    const today = new Date().toISOString().split('T')[0]
+    if (!completedDates.has(today)) return 0
+
+    let streak = 1
+    const d = new Date()
+    while (true) {
+      d.setDate(d.getDate() - 1)
+      const dateStr = d.toISOString().split('T')[0]
+      if (completedDates.has(dateStr)) {
+        streak++
+      } else {
+        break
+      }
+    }
+    return streak
   }
 
   const handleStart = () => {
@@ -172,6 +204,7 @@ export default function Exercise() {
           targetPulses={state.targetPulses}
           elapsed={elapsed}
           pointsEarned={pointsEarned}
+          streakDays={streakDays}
           onClose={handleCloseCompletion}
         />
       )}

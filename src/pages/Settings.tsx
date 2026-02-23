@@ -163,15 +163,17 @@ export default function Settings() {
               <p className="text-sm">Owned: <span className="text-blue font-bold">{profile.shieldsOwned}</span> / 2</p>
               <p className="text-text-dim text-xs mt-1">Protects a missed day from breaking your streak</p>
             </div>
-            <button
-              onClick={handleBuyShield}
-              disabled={profile.totalPoints < 25 || profile.shieldsOwned >= 2}
-              className="bg-blue text-white rounded-xl py-3 px-5 disabled:opacity-40 active:scale-95 transition-transform flex flex-col items-center gap-1 shrink-0"
-            >
-              <Shield size={18} />
-              <span className="font-semibold text-sm whitespace-nowrap">Buy Shield</span>
-              <span className="text-xs text-white/70">25 points</span>
-            </button>
+            <div className="flex flex-col items-center shrink-0">
+              <button
+                onClick={handleBuyShield}
+                disabled={profile.totalPoints < 25 || profile.shieldsOwned >= 2}
+                className="bg-blue text-white rounded-xl py-3 px-5 disabled:opacity-40 active:scale-95 transition-transform flex items-center gap-2"
+              >
+                <Shield size={18} />
+                <span className="font-semibold text-sm whitespace-nowrap">Buy Shield</span>
+              </button>
+              <span className="text-text-dim text-xs mt-1">25 points</span>
+            </div>
           </div>
         </div>
       </div>

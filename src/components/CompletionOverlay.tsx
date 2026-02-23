@@ -6,10 +6,11 @@ interface Props {
   targetPulses: number
   elapsed: number
   pointsEarned: number
+  streakDays: number
   onClose: () => void
 }
 
-export default function CompletionOverlay({ pulsesCompleted, targetPulses, elapsed, pointsEarned, onClose }: Props) {
+export default function CompletionOverlay({ pulsesCompleted, targetPulses, elapsed, pointsEarned, streakDays, onClose }: Props) {
   useEffect(() => {
     confetti({
       particleCount: 150,
@@ -31,7 +32,14 @@ export default function CompletionOverlay({ pulsesCompleted, targetPulses, elaps
           {completed ? 'Exercise Complete!' : 'Good Effort!'}
         </h2>
 
-        <div className="grid grid-cols-2 gap-4 mt-6 mb-8">
+        {streakDays > 0 && (
+          <div className="mt-6 mb-2">
+            <p className="text-6xl font-black text-yellow">{streakDays}</p>
+            <p className="text-text-dim text-sm">day streak</p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-4 mt-4 mb-8">
           <div className="bg-surface rounded-xl p-4">
             <p className="text-2xl font-bold text-primary">{pulsesCompleted}</p>
             <p className="text-text-dim text-xs">Pulses</p>
