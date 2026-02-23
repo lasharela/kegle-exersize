@@ -131,19 +131,19 @@ export default function Exercise() {
           <>
             <button
               onClick={isPaused ? resume : pause}
-              className="bg-surface border border-border text-text font-semibold rounded-full px-8 py-3 active:scale-95 transition-transform"
+              className="flex-1 bg-surface border border-border text-text font-semibold rounded-full py-3 active:scale-95 transition-transform"
             >
               {isPaused ? 'Resume' : 'Pause'}
             </button>
             <button
               onClick={skip}
-              className="bg-surface border border-yellow/40 text-yellow font-semibold rounded-full px-6 py-3 active:scale-95 transition-transform"
+              className="flex-1 bg-surface border border-yellow/40 text-yellow font-semibold rounded-full py-3 active:scale-95 transition-transform"
             >
               {phase === 'pulse_tick' || phase === 'pulse_break' ? 'Finish' : 'Skip'}
             </button>
             <button
               onClick={stop}
-              className="bg-surface border border-primary text-primary font-semibold rounded-full px-6 py-3 active:scale-95 transition-transform"
+              className="flex-1 bg-surface border border-primary text-primary font-semibold rounded-full py-3 active:scale-95 transition-transform"
             >
               Stop
             </button>

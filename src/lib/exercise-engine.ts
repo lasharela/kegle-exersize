@@ -219,7 +219,7 @@ export function getPhaseProgress(state: ExerciseState): number {
 
   if (phase === 'warmupA_hold') {
     const repProgress = (WARMUP_A_HOLD - state.timeRemaining) / WARMUP_A_HOLD
-    return ((state.warmupARep - 1 + repProgress) / WARMUP_A_REPS) * 100
+    return ((state.warmupARep - 1 + repProgress * 0.5) / WARMUP_A_REPS) * 100
   }
   if (phase === 'warmupA_rest') {
     const repProgress = (WARMUP_A_REST - state.timeRemaining) / WARMUP_A_REST
@@ -232,7 +232,7 @@ export function getPhaseProgress(state: ExerciseState): number {
 
   if (phase === 'warmupB_hold') {
     const repProgress = (WARMUP_B_HOLD - state.timeRemaining) / WARMUP_B_HOLD
-    return ((state.warmupBRep - 1 + repProgress) / WARMUP_B_REPS) * 100
+    return ((state.warmupBRep - 1 + repProgress * 0.5) / WARMUP_B_REPS) * 100
   }
   if (phase === 'warmupB_rest') {
     const repProgress = (WARMUP_B_REST - state.timeRemaining) / WARMUP_B_REST
