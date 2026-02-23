@@ -207,25 +207,41 @@ export function getCircleDisplay(state: ExerciseState): { big: string; sub: stri
   return { big: '', sub: '' }
 }
 
-export function getProgressPercent(state: ExerciseState): number {
+export function getPhaseProgress(state: ExerciseState): number {
   const { phase } = state
 
-  if (phase === 'idle' || phase === 'countdown') return 0
+  if (phase === 'idle') return 0
   if (phase === 'completed') return 100
 
-  const warmupAWeight = 15
-  const warmupBWeight = 15
-  const pulseWeight = 70
-
-  let progress = 0
-
-  if (phase.startsWith('warmupA') || phase === 'breakA') {
-    progress = (state.warmupARep / WARMUP_A_REPS) * warmupAWeight
-  } else if (phase.startsWith('warmupB') || phase === 'breakB') {
-    progress = warmupAWeight + (state.warmupBRep / WARMUP_B_REPS) * warmupBWeight
-  } else {
-    progress = warmupAWeight + warmupBWeight + (state.pulsesCompleted / state.targetPulses) * pulseWeight
+  if (phase === 'countdown') {
+    return ((COUNTDOWN_SECONDS - state.timeRemaining) / COUNTDOWN_SECONDS) * 100
   }
 
-  return Math.min(progress, 100)
+  if (phase === 'warmupA_hold') {
+    const repProgress = (WARMUP_A_HOLD - state.timeRemaining) / WARMUP_A_HOLD
+    return ((state.warmupARep - 1 + repProgress) / WARMUP_A_REPS) * 100
+  }
+  if (phase === 'warmupA_rest') {
+    const repProgress = (WARMUP_A_REST - state.timeRemaining) / WARMUP_A_REST
+    return ((state.warmupARep - 1 + 0.5 + repProgress * 0.5) / WARMUP_A_REPS) * 100
+  }
+
+  if (phase === 'breakA' || phase === 'breakB' || phase === 'pulse_break') {
+    return ((BREAK_DURATION - state.timeRemaining) / BREAK_DURATION) * 100
+  }
+
+  if (phase === 'warmupB_hold') {
+    const repProgress = (WARMUP_B_HOLD - state.timeRemaining) / WARMUP_B_HOLD
+    return ((state.warmupBRep - 1 + repProgress) / WARMUP_B_REPS) * 100
+  }
+  if (phase === 'warmupB_rest') {
+    const repProgress = (WARMUP_B_REST - state.timeRemaining) / WARMUP_B_REST
+    return ((state.warmupBRep - 1 + 0.5 + repProgress * 0.5) / WARMUP_B_REPS) * 100
+  }
+
+  if (phase === 'pulse_tick') {
+    return (state.pulsesCompleted / state.targetPulses) * 100
+  }
+
+  return 0
 }

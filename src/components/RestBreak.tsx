@@ -5,9 +5,8 @@ interface Props {
 }
 
 export default function RestBreak({ state }: Props) {
-  const { phase, timeRemaining, warmupARep, warmupBRep, totalWarmupAReps, totalWarmupBReps, pulsesCompleted, targetPulses } = state
+  const { phase, warmupARep, warmupBRep, totalWarmupAReps, totalWarmupBReps, pulsesCompleted, targetPulses } = state
 
-  let title = 'Break Time'
   let subtitle = ''
 
   if (phase === 'breakA') {
@@ -20,9 +19,7 @@ export default function RestBreak({ state }: Props) {
 
   return (
     <div className="text-center mt-4">
-      <p className="text-blue font-semibold text-lg">{title}</p>
       <p className="text-text-dim text-sm">{subtitle}</p>
-      <p className="text-3xl font-bold text-blue mt-2">{Math.ceil(timeRemaining)}s</p>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { getPhaseColor, getCircleDisplay, getProgressPercent, getPhaseNumber } from '../lib/exercise-engine'
+import { getPhaseColor, getCircleDisplay, getPhaseProgress, getPhaseNumber } from '../lib/exercise-engine'
 import type { ExerciseState } from '../lib/types'
 
 interface Props {
@@ -9,7 +9,7 @@ export default function PulseCircle({ state }: Props) {
   const { phase } = state
   const color = getPhaseColor(phase)
   const { big, sub } = getCircleDisplay(state)
-  const progress = getProgressPercent(state)
+  const progress = getPhaseProgress(state)
   const phaseInfo = getPhaseNumber(phase)
 
   const isSqueeze = phase === 'warmupA_hold' || phase === 'warmupB_hold' || phase === 'pulse_tick'

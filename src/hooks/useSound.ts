@@ -1,47 +1,53 @@
 import { useCallback, useRef } from 'react'
 
-function createAudio(src: string) {
-  const audio = new Audio(src)
-  audio.preload = 'auto'
-  return audio
+let audioCtx: AudioContext | null = null
+const bufferCache: Record<string, AudioBuffer> = {}
+
+function getContext(): AudioContext {
+  if (!audioCtx) audioCtx = new AudioContext()
+  return audioCtx
 }
 
-export function useSound() {
-  const sounds = useRef<Record<string, HTMLAudioElement> | null>(null)
+async function loadBuffer(src: string): Promise<AudioBuffer> {
+  if (bufferCache[src]) return bufferCache[src]
+  const res = await fetch(src)
+  const arrayBuf = await res.arrayBuffer()
+  const buffer = await getContext().decodeAudioData(arrayBuf)
+  bufferCache[src] = buffer
+  return buffer
+}
 
-  const getSounds = useCallback(() => {
-    if (!sounds.current) {
-      sounds.current = {
-        chimeUp: createAudio('/chime-up.mp3'),
-        chimeDown: createAudio('/chime-down.mp3'),
-        beep: createAudio('/beep.mp3'),
-        breakStart: createAudio('/break-start.mp3'),
-        complete: createAudio('/complete.mp3'),
-      }
-    }
-    return sounds.current
+function playBuffer(buffer: AudioBuffer) {
+  const ctx = getContext()
+  if (ctx.state === 'suspended') ctx.resume()
+  const source = ctx.createBufferSource()
+  source.buffer = buffer
+  source.connect(ctx.destination)
+  source.start(0)
+}
+
+const SOUNDS = ['/chime-up.mp3', '/chime-down.mp3', '/beep.mp3', '/break-start.mp3', '/complete.mp3'] as const
+
+export function useSound() {
+  const buffersRef = useRef<Record<string, AudioBuffer>>({})
+
+  const play = useCallback((src: string) => {
+    const buf = buffersRef.current[src]
+    if (buf) playBuffer(buf)
   }, [])
 
-  const play = useCallback((name: string) => {
-    const s = getSounds()[name]
-    if (!s) return
-    s.currentTime = 0
-    s.play().catch(() => {})
-  }, [getSounds])
+  const squeezeChime = useCallback(() => play('/chime-up.mp3'), [play])
+  const releaseChime = useCallback(() => play('/chime-down.mp3'), [play])
+  const fastBeep = useCallback(() => play('/beep.mp3'), [play])
+  const breakSound = useCallback(() => play('/break-start.mp3'), [play])
+  const completionFanfare = useCallback(() => play('/complete.mp3'), [play])
 
-  const squeezeChime = useCallback(() => play('chimeUp'), [play])
-  const releaseChime = useCallback(() => play('chimeDown'), [play])
-  const fastBeep = useCallback(() => play('beep'), [play])
-  const breakSound = useCallback(() => play('breakStart'), [play])
-  const completionFanfare = useCallback(() => play('complete'), [play])
-
-  const initAudio = useCallback(() => {
-    const s = getSounds()
-    Object.values(s).forEach((a) => {
-      a.load()
-      a.play().then(() => { a.pause(); a.currentTime = 0 }).catch(() => {})
-    })
-  }, [getSounds])
+  const initAudio = useCallback(async () => {
+    const ctx = getContext()
+    if (ctx.state === 'suspended') await ctx.resume()
+    const loaded = await Promise.all(SOUNDS.map((s) => loadBuffer(s)))
+    SOUNDS.forEach((s, i) => { buffersRef.current[s] = loaded[i] })
+  }, [])
 
   return { squeezeChime, releaseChime, fastBeep, breakSound, completionFanfare, initAudio }
 }
