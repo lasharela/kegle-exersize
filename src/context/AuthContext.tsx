@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react'
-import { ID, Query, type Models } from 'appwrite'
+import { ID, Query, Permission, Role, type Models } from 'appwrite'
 import { account, databases, DATABASE_ID, PROFILES_COLLECTION } from '../lib/appwrite'
 import type { Profile } from '../lib/types'
 
@@ -15,9 +15,6 @@ interface AuthState {
 }
 
 const AuthContext = createContext<AuthState | null>(null)
-
-const DEV_MODE = import.meta.env.DEV
-const DEFAULT_TARGET = DEV_MODE ? 10 : 400
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null)
@@ -62,21 +59,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(u)
 
     const today = new Date().toISOString().split('T')[0]
-    const doc = await databases.createDocument(DATABASE_ID, PROFILES_COLLECTION, ID.unique(), {
-      userId: u.$id,
-      initials: initials,
-      totalPoints: 0,
-      shieldsOwned: 0,
-      shieldsUsed: [],
-      currentWeek: 1,
-      currentTarget: DEFAULT_TARGET,
-      pulseInterval: 1.5,
-      reminderTime: '09:00',
-      notificationsEnabled: false,
-      unlockedBadges: [],
-      weekStartDate: today,
-      totalPulses: 0,
-    })
+    const doc = await databases.createDocument(
+      DATABASE_ID,
+      PROFILES_COLLECTION,
+      ID.unique(),
+      {
+        userId: u.$id,
+        initials: initials,
+        totalPoints: 0,
+        shieldsOwned: 0,
+        shieldsUsed: [],
+        currentWeek: 1,
+        currentTarget: 400,
+        pulseInterval: 1.5,
+        reminderTime: '09:00',
+        notificationsEnabled: false,
+        unlockedBadges: [],
+        weekStartDate: today,
+        totalPulses: 0,
+      },
+      [
+        Permission.read(Role.user(u.$id)),
+        Permission.update(Role.user(u.$id)),
+        Permission.delete(Role.user(u.$id)),
+      ]
+    )
     setProfile(doc as unknown as Profile)
   }
 

@@ -1,30 +1,25 @@
-import { useState, useCallback, useRef } from 'react'
-import { createInitialState, startExercise, tick } from '../lib/exercise-engine'
+import { useState, useCallback } from 'react'
+import { createInitialState, startExercise, tick, skipPhase, TICK_MS } from '../lib/exercise-engine'
 import type { ExerciseState } from '../lib/types'
 import { useTimer, useElapsed } from './useTimer'
 
-export function useExercise(target: number, pulseInterval: number) {
-  const [state, setState] = useState<ExerciseState>(() => createInitialState(target, pulseInterval))
-  const stateRef = useRef(state)
-  stateRef.current = state
+export function useExercise(target: number, pulseIntervalMs: number) {
+  const [state, setState] = useState<ExerciseState>(() => createInitialState(target, pulseIntervalMs))
 
   const isActive = state.phase !== 'idle' && state.phase !== 'completed' && !state.isPaused
   const { elapsed, reset: resetElapsed } = useElapsed(isActive)
 
   const handleTick = useCallback(() => {
-    setState((prev) => {
-      const next = tick(prev)
-      return next
-    })
+    setState((prev) => tick(prev))
   }, [])
 
-  useTimer(handleTick, 1000, isActive)
+  useTimer(handleTick, TICK_MS, isActive)
 
   const start = useCallback(() => {
-    const initial = createInitialState(target, pulseInterval)
+    const initial = createInitialState(target, pulseIntervalMs)
     setState(startExercise(initial))
     resetElapsed()
-  }, [target, pulseInterval, resetElapsed])
+  }, [target, pulseIntervalMs, resetElapsed])
 
   const pause = useCallback(() => {
     setState((prev) => ({ ...prev, isPaused: true }))
@@ -39,9 +34,13 @@ export function useExercise(target: number, pulseInterval: number) {
   }, [])
 
   const reset = useCallback(() => {
-    setState(createInitialState(target, pulseInterval))
+    setState(createInitialState(target, pulseIntervalMs))
     resetElapsed()
-  }, [target, pulseInterval, resetElapsed])
+  }, [target, pulseIntervalMs, resetElapsed])
 
-  return { state, elapsed, start, pause, resume, stop, reset }
+  const skip = useCallback(() => {
+    setState((prev) => skipPhase(prev))
+  }, [])
+
+  return { state, elapsed, start, pause, resume, stop, reset, skip }
 }

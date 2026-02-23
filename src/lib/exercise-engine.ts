@@ -1,17 +1,23 @@
 import type { ExerciseState, ExercisePhase } from './types'
 
-const DEV_MODE = import.meta.env.DEV
+// Phase 1: Short Warmup — 2s squeeze + 2s rest × 20, then 30s break
+const WARMUP_A_HOLD = 2
+const WARMUP_A_REST = 2
+const WARMUP_A_REPS = 20
 
-const WARMUP_A_HOLD = DEV_MODE ? 1 : 3
-const WARMUP_A_REST = DEV_MODE ? 1 : 3
-const WARMUP_A_REPS = DEV_MODE ? 3 : 20
-const WARMUP_B_HOLD = DEV_MODE ? 2 : 10
-const WARMUP_B_REST = DEV_MODE ? 1 : 10
-const WARMUP_B_REPS = DEV_MODE ? 2 : 5
-const BREAK_DURATION = DEV_MODE ? 3 : 30
-const PULSES_PER_REST = DEV_MODE ? 5 : 200
+// Phase 2: Long Warmup — 10s hold + 10s rest × 5, then 30s break
+const WARMUP_B_HOLD = 10
+const WARMUP_B_REST = 10
+const WARMUP_B_REPS = 5
 
-export function createInitialState(target: number, pulseInterval: number): ExerciseState {
+const BREAK_DURATION = 30
+const PULSES_PER_REST = 200
+
+// Tick interval in seconds (100ms ticks)
+export const TICK_MS = 100
+export const TICK_S = TICK_MS / 1000
+
+export function createInitialState(target: number, pulseIntervalMs: number): ExerciseState {
   return {
     phase: 'idle',
     timeRemaining: 0,
@@ -19,7 +25,7 @@ export function createInitialState(target: number, pulseInterval: number): Exerc
     warmupBRep: 0,
     pulsesCompleted: 0,
     targetPulses: target,
-    pulseInterval,
+    pulseInterval: pulseIntervalMs / 1000,
     totalWarmupAReps: WARMUP_A_REPS,
     totalWarmupBReps: WARMUP_B_REPS,
     isPaused: false,
@@ -33,13 +39,39 @@ export function startExercise(state: ExerciseState): ExerciseState {
 export function tick(state: ExerciseState): ExerciseState {
   if (state.isPaused || state.phase === 'idle' || state.phase === 'completed') return state
 
-  const next = state.timeRemaining - 1
+  const next = state.timeRemaining - TICK_S
 
-  if (next > 0) {
+  if (next > TICK_S / 2) {
     return { ...state, timeRemaining: next }
   }
 
   return advancePhase(state)
+}
+
+export function skipPhase(state: ExerciseState): ExerciseState {
+  if (state.phase === 'idle' || state.phase === 'completed') return state
+
+  const { phase } = state
+
+  // Skip warmup A → break A → warmup B start
+  if (phase === 'warmupA_hold' || phase === 'warmupA_rest') {
+    return { ...state, phase: 'breakA', timeRemaining: BREAK_DURATION, warmupARep: WARMUP_A_REPS }
+  }
+  // Skip break → next phase
+  if (phase === 'breakA') {
+    return { ...state, phase: 'warmupB_hold', timeRemaining: WARMUP_B_HOLD, warmupBRep: 1 }
+  }
+  if (phase === 'warmupB_hold' || phase === 'warmupB_rest') {
+    return { ...state, phase: 'breakB', timeRemaining: BREAK_DURATION, warmupBRep: WARMUP_B_REPS }
+  }
+  if (phase === 'breakB') {
+    return { ...state, phase: 'pulse_squeeze', timeRemaining: state.pulseInterval }
+  }
+  if (phase === 'pulse_break') {
+    return { ...state, phase: 'pulse_squeeze', timeRemaining: state.pulseInterval }
+  }
+
+  return state
 }
 
 function advancePhase(state: ExerciseState): ExerciseState {
@@ -97,20 +129,17 @@ function advancePhase(state: ExerciseState): ExerciseState {
   return state
 }
 
-export function getPhaseLabel(phase: ExercisePhase): string {
-  switch (phase) {
-    case 'idle': return 'Ready'
-    case 'warmupA_hold': return 'Squeeze'
-    case 'warmupA_rest': return 'Rest'
-    case 'breakA': return 'Break'
-    case 'warmupB_hold': return 'Hold'
-    case 'warmupB_rest': return 'Rest'
-    case 'breakB': return 'Break'
-    case 'pulse_squeeze': return 'Squeeze'
-    case 'pulse_release': return 'Release'
-    case 'pulse_break': return 'Break'
-    case 'completed': return 'Done!'
+export function getPhaseNumber(phase: ExercisePhase): { num: number; total: number; name: string } {
+  if (phase === 'warmupA_hold' || phase === 'warmupA_rest' || phase === 'breakA') {
+    return { num: 1, total: 3, name: 'Short Warmup' }
   }
+  if (phase === 'warmupB_hold' || phase === 'warmupB_rest' || phase === 'breakB') {
+    return { num: 2, total: 3, name: 'Long Warmup' }
+  }
+  if (phase === 'pulse_squeeze' || phase === 'pulse_release' || phase === 'pulse_break') {
+    return { num: 3, total: 3, name: 'Fast Pulses' }
+  }
+  return { num: 0, total: 3, name: '' }
 }
 
 export function getPhaseColor(phase: ExercisePhase): string {
@@ -138,34 +167,26 @@ export function isBreakPhase(phase: ExercisePhase): boolean {
   return phase === 'breakA' || phase === 'breakB' || phase === 'pulse_break'
 }
 
-export function isPulsePhase(phase: ExercisePhase): boolean {
-  return phase === 'pulse_squeeze' || phase === 'pulse_release'
-}
-
 export function getCircleDisplay(state: ExerciseState): { big: string; sub: string } {
   const { phase } = state
 
   if (phase === 'idle') return { big: '', sub: 'Tap Start' }
-  if (phase === 'completed') return { big: '✓', sub: 'Done!' }
+  if (phase === 'completed') return { big: '', sub: 'Done!' }
 
-  // Breaks always show countdown
   if (isBreakPhase(phase)) {
     return { big: `${Math.ceil(state.timeRemaining)}`, sub: 'Break' }
   }
 
-  // Warmup A — show rep count
   if (phase === 'warmupA_hold' || phase === 'warmupA_rest') {
     const label = phase === 'warmupA_hold' ? 'Squeeze' : 'Rest'
-    return { big: `${state.warmupARep}`, sub: `Set A · ${label}` }
+    return { big: `${state.warmupARep}`, sub: label }
   }
 
-  // Warmup B — show rep count
   if (phase === 'warmupB_hold' || phase === 'warmupB_rest') {
     const label = phase === 'warmupB_hold' ? 'Hold' : 'Rest'
-    return { big: `${state.warmupBRep}`, sub: `Set B · ${label}` }
+    return { big: `${state.warmupBRep}`, sub: label }
   }
 
-  // Main pulses — show pulse count
   if (phase === 'pulse_squeeze' || phase === 'pulse_release') {
     const label = phase === 'pulse_squeeze' ? 'Squeeze' : 'Release'
     return { big: `${state.pulsesCompleted}`, sub: label }

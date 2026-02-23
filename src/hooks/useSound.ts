@@ -14,6 +14,7 @@ export function useSound() {
       sounds.current = {
         squeeze: createAudio('/squeeze.mp3'),
         release: createAudio('/release.mp3'),
+        beep: createAudio('/beep.mp3'),
         break: createAudio('/break.mp3'),
         complete: createAudio('/complete.mp3'),
       }
@@ -30,18 +31,17 @@ export function useSound() {
 
   const pulseClick = useCallback(() => play('squeeze'), [play])
   const releaseClick = useCallback(() => play('release'), [play])
+  const fastBeep = useCallback(() => play('beep'), [play])
   const breakChime = useCallback(() => play('break'), [play])
   const completionFanfare = useCallback(() => play('complete'), [play])
 
   const initAudio = useCallback(() => {
-    // Preload all sounds on first user interaction
     const s = getSounds()
     Object.values(s).forEach((a) => {
       a.load()
-      // Play and immediately pause to unlock audio on iOS/Chrome
       a.play().then(() => { a.pause(); a.currentTime = 0 }).catch(() => {})
     })
   }, [getSounds])
 
-  return { pulseClick, releaseClick, breakChime, completionFanfare, initAudio }
+  return { pulseClick, releaseClick, fastBeep, breakChime, completionFanfare, initAudio }
 }
