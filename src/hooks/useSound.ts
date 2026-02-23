@@ -12,8 +12,8 @@ export function useSound() {
   const getSounds = useCallback(() => {
     if (!sounds.current) {
       sounds.current = {
-        squeeze: createAudio('/squeeze.mp3'),
-        release: createAudio('/release.mp3'),
+        up: createAudio('/up.mp3'),
+        down: createAudio('/down.mp3'),
         beep: createAudio('/beep.mp3'),
         break: createAudio('/break.mp3'),
         complete: createAudio('/complete.mp3'),
@@ -29,8 +29,8 @@ export function useSound() {
     s.play().catch(() => {})
   }, [getSounds])
 
-  const pulseClick = useCallback(() => play('squeeze'), [play])
-  const releaseClick = useCallback(() => play('release'), [play])
+  const squeezeUp = useCallback(() => play('up'), [play])
+  const releaseDown = useCallback(() => play('down'), [play])
   const fastBeep = useCallback(() => play('beep'), [play])
   const breakChime = useCallback(() => play('break'), [play])
   const completionFanfare = useCallback(() => play('complete'), [play])
@@ -43,5 +43,5 @@ export function useSound() {
     })
   }, [getSounds])
 
-  return { pulseClick, releaseClick, fastBeep, breakChime, completionFanfare, initAudio }
+  return { squeezeUp, releaseDown, fastBeep, breakChime, completionFanfare, initAudio }
 }

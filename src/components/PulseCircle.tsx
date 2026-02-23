@@ -12,7 +12,7 @@ export default function PulseCircle({ state }: Props) {
   const progress = getProgressPercent(state)
   const phaseInfo = getPhaseNumber(phase)
 
-  const isSqueeze = phase === 'warmupA_hold' || phase === 'warmupB_hold' || phase === 'pulse_squeeze'
+  const isSqueeze = phase === 'warmupA_hold' || phase === 'warmupB_hold' || phase === 'pulse_tick'
   const scale = isSqueeze ? 1.15 : 1
 
   const radius = 100
@@ -62,7 +62,7 @@ export default function PulseCircle({ state }: Props) {
           <span className="text-sm font-semibold mt-1" style={{ color }}>
             {sub}
           </span>
-          {(phase === 'pulse_squeeze' || phase === 'pulse_release' || phase === 'pulse_break') && (
+          {(phase === 'pulse_tick' || phase === 'pulse_break') && (
             <span className="text-text-dim text-xs mt-1">
               / {state.targetPulses}
             </span>

@@ -36,8 +36,7 @@ export type ExercisePhase =
   | 'warmupB_hold'
   | 'warmupB_rest'
   | 'breakB'
-  | 'pulse_squeeze'
-  | 'pulse_release'
+  | 'pulse_tick'
   | 'pulse_break'
   | 'completed'
 

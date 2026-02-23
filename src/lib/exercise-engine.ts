@@ -53,11 +53,9 @@ export function skipPhase(state: ExerciseState): ExerciseState {
 
   const { phase } = state
 
-  // Skip warmup A → break A → warmup B start
   if (phase === 'warmupA_hold' || phase === 'warmupA_rest') {
     return { ...state, phase: 'breakA', timeRemaining: BREAK_DURATION, warmupARep: WARMUP_A_REPS }
   }
-  // Skip break → next phase
   if (phase === 'breakA') {
     return { ...state, phase: 'warmupB_hold', timeRemaining: WARMUP_B_HOLD, warmupBRep: 1 }
   }
@@ -65,10 +63,10 @@ export function skipPhase(state: ExerciseState): ExerciseState {
     return { ...state, phase: 'breakB', timeRemaining: BREAK_DURATION, warmupBRep: WARMUP_B_REPS }
   }
   if (phase === 'breakB') {
-    return { ...state, phase: 'pulse_squeeze', timeRemaining: state.pulseInterval }
+    return { ...state, phase: 'pulse_tick', timeRemaining: state.pulseInterval }
   }
   if (phase === 'pulse_break') {
-    return { ...state, phase: 'pulse_squeeze', timeRemaining: state.pulseInterval }
+    return { ...state, phase: 'pulse_tick', timeRemaining: state.pulseInterval }
   }
 
   return state
@@ -104,14 +102,11 @@ function advancePhase(state: ExerciseState): ExerciseState {
   }
 
   if (phase === 'breakB') {
-    return { ...state, phase: 'pulse_squeeze', timeRemaining: state.pulseInterval }
+    return { ...state, phase: 'pulse_tick', timeRemaining: state.pulseInterval }
   }
 
-  if (phase === 'pulse_squeeze') {
-    return { ...state, phase: 'pulse_release', timeRemaining: state.pulseInterval }
-  }
-
-  if (phase === 'pulse_release') {
+  // Fast pulses: beep → count +1 → beep → count +1 (no squeeze/release split)
+  if (phase === 'pulse_tick') {
     const newPulses = state.pulsesCompleted + 1
     if (newPulses >= state.targetPulses) {
       return { ...state, phase: 'completed', pulsesCompleted: newPulses, timeRemaining: 0 }
@@ -119,11 +114,11 @@ function advancePhase(state: ExerciseState): ExerciseState {
     if (newPulses % PULSES_PER_REST === 0) {
       return { ...state, phase: 'pulse_break', pulsesCompleted: newPulses, timeRemaining: BREAK_DURATION }
     }
-    return { ...state, phase: 'pulse_squeeze', pulsesCompleted: newPulses, timeRemaining: state.pulseInterval }
+    return { ...state, phase: 'pulse_tick', pulsesCompleted: newPulses, timeRemaining: state.pulseInterval }
   }
 
   if (phase === 'pulse_break') {
-    return { ...state, phase: 'pulse_squeeze', timeRemaining: state.pulseInterval }
+    return { ...state, phase: 'pulse_tick', timeRemaining: state.pulseInterval }
   }
 
   return state
@@ -136,7 +131,7 @@ export function getPhaseNumber(phase: ExercisePhase): { num: number; total: numb
   if (phase === 'warmupB_hold' || phase === 'warmupB_rest' || phase === 'breakB') {
     return { num: 2, total: 3, name: 'Long Warmup' }
   }
-  if (phase === 'pulse_squeeze' || phase === 'pulse_release' || phase === 'pulse_break') {
+  if (phase === 'pulse_tick' || phase === 'pulse_break') {
     return { num: 3, total: 3, name: 'Fast Pulses' }
   }
   return { num: 0, total: 3, name: '' }
@@ -146,11 +141,10 @@ export function getPhaseColor(phase: ExercisePhase): string {
   switch (phase) {
     case 'warmupA_hold':
     case 'warmupB_hold':
-    case 'pulse_squeeze':
+    case 'pulse_tick':
       return '#ef4444'
     case 'warmupA_rest':
     case 'warmupB_rest':
-    case 'pulse_release':
       return '#22c55e'
     case 'breakA':
     case 'breakB':
@@ -178,18 +172,17 @@ export function getCircleDisplay(state: ExerciseState): { big: string; sub: stri
   }
 
   if (phase === 'warmupA_hold' || phase === 'warmupA_rest') {
-    const label = phase === 'warmupA_hold' ? 'Squeeze' : 'Rest'
+    const label = phase === 'warmupA_hold' ? 'Squeeze' : 'Release'
     return { big: `${state.warmupARep}`, sub: label }
   }
 
   if (phase === 'warmupB_hold' || phase === 'warmupB_rest') {
-    const label = phase === 'warmupB_hold' ? 'Hold' : 'Rest'
+    const label = phase === 'warmupB_hold' ? 'Hold' : 'Release'
     return { big: `${state.warmupBRep}`, sub: label }
   }
 
-  if (phase === 'pulse_squeeze' || phase === 'pulse_release') {
-    const label = phase === 'pulse_squeeze' ? 'Squeeze' : 'Release'
-    return { big: `${state.pulsesCompleted}`, sub: label }
+  if (phase === 'pulse_tick') {
+    return { big: `${state.pulsesCompleted}`, sub: 'Pulse' }
   }
 
   return { big: '', sub: '' }

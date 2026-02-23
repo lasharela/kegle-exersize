@@ -12,11 +12,10 @@ import CompletionOverlay from '../components/CompletionOverlay'
 export default function Exercise() {
   const { profile, updateProfile, refreshProfile } = useAuth()
   const target = profile?.currentTarget ?? 400
-  // pulseInterval stored in seconds in profile, convert to ms
   const intervalMs = (profile?.pulseInterval ?? 1.5) * 1000
 
   const { state, elapsed, start, pause, resume, stop, reset, skip } = useExercise(target, intervalMs)
-  const { pulseClick, fastBeep, breakChime, completionFanfare, initAudio } = useSound()
+  const { squeezeUp, releaseDown, fastBeep, breakChime, completionFanfare, initAudio } = useSound()
   const [showCompletion, setShowCompletion] = useState(false)
   const [pointsEarned, setPointsEarned] = useState(0)
   const prevPhase = useRef(state.phase)
@@ -29,11 +28,12 @@ export default function Exercise() {
 
     if (prev === curr) return
 
-    // Warmup phases get the slower squeeze/release sounds
-    if (curr === 'warmupA_hold' || curr === 'warmupB_hold') pulseClick()
+    // Warmup: ascending tone on squeeze, descending on release
+    if (curr === 'warmupA_hold' || curr === 'warmupB_hold') squeezeUp()
+    if (curr === 'warmupA_rest' || curr === 'warmupB_rest') releaseDown()
 
-    // Fast pulse phase gets the sharp beep
-    if (curr === 'pulse_squeeze') fastBeep()
+    // Fast pulses: sharp beep on every tick
+    if (curr === 'pulse_tick') fastBeep()
 
     if (isBreakPhase(curr)) breakChime()
     if (curr === 'completed') {
