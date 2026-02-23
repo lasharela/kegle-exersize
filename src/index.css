@@ -15,13 +15,15 @@
   --color-blue: #3b82f6;
 }
 
-html, body, #root {
+html {
   height: 100%;
-  margin: 0;
-  padding: 0;
 }
 
 body {
+  min-height: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
   background-color: var(--color-bg);
   color: var(--color-text);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -31,6 +33,8 @@ body {
 }
 
 #root {
+  min-height: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
 }

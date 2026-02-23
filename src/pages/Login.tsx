@@ -2,13 +2,23 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
+function getInitials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 4)
+}
+
 export default function Login() {
   const { login, register } = useAuth()
   const navigate = useNavigate()
   const [isRegister, setIsRegister] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [initials, setInitials] = useState('')
+  const [fullName, setFullName] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -18,8 +28,9 @@ export default function Login() {
     setSubmitting(true)
     try {
       if (isRegister) {
-        if (!initials.trim()) { setError('Initials required'); setSubmitting(false); return }
-        await register(email, password, initials)
+        if (!fullName.trim()) { setError('Name is required'); setSubmitting(false); return }
+        const initials = getInitials(fullName)
+        await register(email, password, fullName.trim(), initials)
       } else {
         await login(email, password)
       }
@@ -43,10 +54,9 @@ export default function Login() {
           {isRegister && (
             <input
               type="text"
-              placeholder="Initials (e.g. LS)"
-              maxLength={4}
-              value={initials}
-              onChange={(e) => setInitials(e.target.value.toUpperCase())}
+              placeholder="Full name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
               className="bg-surface border border-border rounded-lg px-4 py-3 text-text placeholder:text-text-dim focus:outline-none focus:border-primary"
             />
           )}

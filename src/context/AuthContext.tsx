@@ -8,13 +8,16 @@ interface AuthState {
   profile: Profile | null
   loading: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, initials: string) => Promise<void>
+  register: (email: string, password: string, name: string, initials: string) => Promise<void>
   logout: () => Promise<void>
   refreshProfile: () => Promise<void>
   updateProfile: (data: Partial<Profile>) => Promise<void>
 }
 
 const AuthContext = createContext<AuthState | null>(null)
+
+const DEV_MODE = import.meta.env.DEV
+const DEFAULT_TARGET = DEV_MODE ? 10 : 400
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null)
@@ -52,8 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchProfile(u.$id)
   }
 
-  const register = async (email: string, password: string, initials: string) => {
-    await account.create(ID.unique(), email, password, initials)
+  const register = async (email: string, password: string, name: string, initials: string) => {
+    await account.create(ID.unique(), email, password, name)
     await account.createEmailPasswordSession(email, password)
     const u = await account.get()
     setUser(u)
@@ -61,12 +64,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const today = new Date().toISOString().split('T')[0]
     const doc = await databases.createDocument(DATABASE_ID, PROFILES_COLLECTION, ID.unique(), {
       userId: u.$id,
-      initials: initials.toUpperCase().slice(0, 4),
+      initials: initials,
       totalPoints: 0,
       shieldsOwned: 0,
       shieldsUsed: [],
       currentWeek: 1,
-      currentTarget: 200,
+      currentTarget: DEFAULT_TARGET,
       pulseInterval: 1.5,
       reminderTime: '09:00',
       notificationsEnabled: false,

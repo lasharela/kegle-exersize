@@ -1,4 +1,4 @@
-import { getPhaseColor, getPhaseLabel, getProgressPercent } from '../lib/exercise-engine'
+import { getPhaseColor, getCircleDisplay, getProgressPercent } from '../lib/exercise-engine'
 import type { ExerciseState } from '../lib/types'
 
 interface Props {
@@ -6,9 +6,9 @@ interface Props {
 }
 
 export default function PulseCircle({ state }: Props) {
-  const { phase, timeRemaining } = state
+  const { phase } = state
   const color = getPhaseColor(phase)
-  const label = getPhaseLabel(phase)
+  const { big, sub } = getCircleDisplay(state)
   const progress = getProgressPercent(state)
 
   const isSqueeze = phase === 'warmupA_hold' || phase === 'warmupB_hold' || phase === 'pulse_squeeze'
@@ -45,14 +45,14 @@ export default function PulseCircle({ state }: Props) {
         style={{ transform: `scale(${scale})`, backgroundColor: `${color}20` }}
       >
         <span className="text-4xl font-bold" style={{ color }}>
-          {phase === 'idle' ? '' : Math.ceil(timeRemaining)}
+          {big}
         </span>
-        <span className="text-lg font-semibold mt-1" style={{ color }}>
-          {label}
+        <span className="text-sm font-semibold mt-1" style={{ color }}>
+          {sub}
         </span>
         {(phase === 'pulse_squeeze' || phase === 'pulse_release' || phase === 'pulse_break') && (
-          <span className="text-text-dim text-sm mt-1">
-            {state.pulsesCompleted} / {state.targetPulses}
+          <span className="text-text-dim text-xs mt-1">
+            / {state.targetPulses}
           </span>
         )}
       </div>

@@ -1,13 +1,15 @@
 import type { ExerciseState, ExercisePhase } from './types'
 
-const WARMUP_A_HOLD = 3
-const WARMUP_A_REST = 3
-const WARMUP_A_REPS = 20
-const WARMUP_B_HOLD = 10
-const WARMUP_B_REST = 10
-const WARMUP_B_REPS = 5
-const BREAK_DURATION = 30
-const PULSES_PER_REST = 200
+const DEV_MODE = import.meta.env.DEV
+
+const WARMUP_A_HOLD = DEV_MODE ? 1 : 3
+const WARMUP_A_REST = DEV_MODE ? 1 : 3
+const WARMUP_A_REPS = DEV_MODE ? 3 : 20
+const WARMUP_B_HOLD = DEV_MODE ? 2 : 10
+const WARMUP_B_REST = DEV_MODE ? 1 : 10
+const WARMUP_B_REPS = DEV_MODE ? 2 : 5
+const BREAK_DURATION = DEV_MODE ? 3 : 30
+const PULSES_PER_REST = DEV_MODE ? 5 : 200
 
 export function createInitialState(target: number, pulseInterval: number): ExerciseState {
   return {
@@ -138,6 +140,38 @@ export function isBreakPhase(phase: ExercisePhase): boolean {
 
 export function isPulsePhase(phase: ExercisePhase): boolean {
   return phase === 'pulse_squeeze' || phase === 'pulse_release'
+}
+
+export function getCircleDisplay(state: ExerciseState): { big: string; sub: string } {
+  const { phase } = state
+
+  if (phase === 'idle') return { big: '', sub: 'Tap Start' }
+  if (phase === 'completed') return { big: '✓', sub: 'Done!' }
+
+  // Breaks always show countdown
+  if (isBreakPhase(phase)) {
+    return { big: `${Math.ceil(state.timeRemaining)}`, sub: 'Break' }
+  }
+
+  // Warmup A — show rep count
+  if (phase === 'warmupA_hold' || phase === 'warmupA_rest') {
+    const label = phase === 'warmupA_hold' ? 'Squeeze' : 'Rest'
+    return { big: `${state.warmupARep}`, sub: `Set A · ${label}` }
+  }
+
+  // Warmup B — show rep count
+  if (phase === 'warmupB_hold' || phase === 'warmupB_rest') {
+    const label = phase === 'warmupB_hold' ? 'Hold' : 'Rest'
+    return { big: `${state.warmupBRep}`, sub: `Set B · ${label}` }
+  }
+
+  // Main pulses — show pulse count
+  if (phase === 'pulse_squeeze' || phase === 'pulse_release') {
+    const label = phase === 'pulse_squeeze' ? 'Squeeze' : 'Release'
+    return { big: `${state.pulsesCompleted}`, sub: label }
+  }
+
+  return { big: '', sub: '' }
 }
 
 export function getProgressPercent(state: ExerciseState): number {

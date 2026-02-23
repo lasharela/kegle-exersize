@@ -1,57 +1,47 @@
 import { useCallback, useRef } from 'react'
 
-let audioCtx: AudioContext | null = null
-function getCtx() {
-  if (!audioCtx) audioCtx = new AudioContext()
-  return audioCtx
-}
-
-function playTone(freq: number, duration: number, type: OscillatorType = 'sine', volume = 0.15) {
-  const ctx = getCtx()
-  const osc = ctx.createOscillator()
-  const gain = ctx.createGain()
-  osc.type = type
-  osc.frequency.value = freq
-  gain.gain.setValueAtTime(volume, ctx.currentTime)
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration)
-  osc.connect(gain)
-  gain.connect(ctx.destination)
-  osc.start()
-  osc.stop(ctx.currentTime + duration)
+function createAudio(src: string) {
+  const audio = new Audio(src)
+  audio.preload = 'auto'
+  return audio
 }
 
 export function useSound() {
-  const enabled = useRef(true)
+  const sounds = useRef<Record<string, HTMLAudioElement> | null>(null)
 
-  const pulseClick = useCallback(() => {
-    if (!enabled.current) return
-    playTone(800, 0.08, 'square', 0.1)
+  const getSounds = useCallback(() => {
+    if (!sounds.current) {
+      sounds.current = {
+        squeeze: createAudio('/squeeze.mp3'),
+        release: createAudio('/release.mp3'),
+        break: createAudio('/break.mp3'),
+        complete: createAudio('/complete.mp3'),
+      }
+    }
+    return sounds.current
   }, [])
 
-  const releaseClick = useCallback(() => {
-    if (!enabled.current) return
-    playTone(400, 0.08, 'square', 0.08)
-  }, [])
+  const play = useCallback((name: string) => {
+    const s = getSounds()[name]
+    if (!s) return
+    s.currentTime = 0
+    s.play().catch(() => {})
+  }, [getSounds])
 
-  const breakChime = useCallback(() => {
-    if (!enabled.current) return
-    playTone(523, 0.15, 'sine', 0.12)
-    setTimeout(() => playTone(659, 0.15, 'sine', 0.12), 150)
-    setTimeout(() => playTone(784, 0.2, 'sine', 0.12), 300)
-  }, [])
-
-  const completionFanfare = useCallback(() => {
-    if (!enabled.current) return
-    const notes = [523, 659, 784, 1047]
-    notes.forEach((freq, i) => {
-      setTimeout(() => playTone(freq, 0.3, 'sine', 0.15), i * 150)
-    })
-  }, [])
+  const pulseClick = useCallback(() => play('squeeze'), [play])
+  const releaseClick = useCallback(() => play('release'), [play])
+  const breakChime = useCallback(() => play('break'), [play])
+  const completionFanfare = useCallback(() => play('complete'), [play])
 
   const initAudio = useCallback(() => {
-    const ctx = getCtx()
-    if (ctx.state === 'suspended') ctx.resume()
-  }, [])
+    // Preload all sounds on first user interaction
+    const s = getSounds()
+    Object.values(s).forEach((a) => {
+      a.load()
+      // Play and immediately pause to unlock audio on iOS/Chrome
+      a.play().then(() => { a.pause(); a.currentTime = 0 }).catch(() => {})
+    })
+  }, [getSounds])
 
   return { pulseClick, releaseClick, breakChime, completionFanfare, initAudio }
 }

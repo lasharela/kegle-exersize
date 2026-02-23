@@ -11,7 +11,7 @@ import CompletionOverlay from '../components/CompletionOverlay'
 
 export default function Exercise() {
   const { profile, updateProfile, refreshProfile } = useAuth()
-  const target = profile?.currentTarget ?? 200
+  const target = profile?.currentTarget ?? 400
   const interval = profile?.pulseInterval ?? 1.5
 
   const { state, elapsed, start, pause, resume, stop, reset } = useExercise(target, interval)
@@ -86,13 +86,6 @@ export default function Exercise() {
       <PulseCircle state={state} />
 
       {isBreakPhase(phase) && <RestBreak state={state} />}
-
-      {phase !== 'idle' && phase !== 'completed' && (
-        <div className="mt-2 text-text-dim text-sm">
-          {phase.startsWith('warmupA') && `Warm-up A: Rep ${state.warmupARep}/${state.totalWarmupAReps}`}
-          {phase.startsWith('warmupB') && `Warm-up B: Rep ${state.warmupBRep}/${state.totalWarmupBReps}`}
-        </div>
-      )}
 
       <div className="flex gap-4 mt-8">
         {phase === 'idle' && (
