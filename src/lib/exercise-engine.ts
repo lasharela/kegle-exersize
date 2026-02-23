@@ -12,6 +12,7 @@ const WARMUP_B_REPS = 5
 
 const BREAK_DURATION = 30
 const PULSES_PER_REST = 200
+const COUNTDOWN_SECONDS = 3
 
 // Tick interval in seconds (100ms ticks)
 export const TICK_MS = 100
@@ -33,7 +34,7 @@ export function createInitialState(target: number, pulseIntervalMs: number): Exe
 }
 
 export function startExercise(state: ExerciseState): ExerciseState {
-  return { ...state, phase: 'warmupA_hold', timeRemaining: WARMUP_A_HOLD, warmupARep: 1 }
+  return { ...state, phase: 'countdown', timeRemaining: COUNTDOWN_SECONDS }
 }
 
 export function tick(state: ExerciseState): ExerciseState {
@@ -53,6 +54,9 @@ export function skipPhase(state: ExerciseState): ExerciseState {
 
   const { phase } = state
 
+  if (phase === 'countdown') {
+    return { ...state, phase: 'warmupA_hold', timeRemaining: WARMUP_A_HOLD, warmupARep: 1 }
+  }
   if (phase === 'warmupA_hold' || phase === 'warmupA_rest') {
     return { ...state, phase: 'breakA', timeRemaining: BREAK_DURATION, warmupARep: WARMUP_A_REPS }
   }
@@ -74,6 +78,10 @@ export function skipPhase(state: ExerciseState): ExerciseState {
 
 function advancePhase(state: ExerciseState): ExerciseState {
   const { phase } = state
+
+  if (phase === 'countdown') {
+    return { ...state, phase: 'warmupA_hold', timeRemaining: WARMUP_A_HOLD, warmupARep: 1 }
+  }
 
   if (phase === 'warmupA_hold') {
     return { ...state, phase: 'warmupA_rest', timeRemaining: WARMUP_A_REST }
@@ -105,7 +113,6 @@ function advancePhase(state: ExerciseState): ExerciseState {
     return { ...state, phase: 'pulse_tick', timeRemaining: state.pulseInterval }
   }
 
-  // Fast pulses: beep → count +1 → beep → count +1 (no squeeze/release split)
   if (phase === 'pulse_tick') {
     const newPulses = state.pulsesCompleted + 1
     if (newPulses >= state.targetPulses) {
@@ -125,6 +132,9 @@ function advancePhase(state: ExerciseState): ExerciseState {
 }
 
 export function getPhaseNumber(phase: ExercisePhase): { num: number; total: number; name: string } {
+  if (phase === 'countdown') {
+    return { num: 0, total: 3, name: 'Get Ready' }
+  }
   if (phase === 'warmupA_hold' || phase === 'warmupA_rest' || phase === 'breakA') {
     return { num: 1, total: 3, name: 'Short Warmup' }
   }
@@ -139,6 +149,8 @@ export function getPhaseNumber(phase: ExercisePhase): { num: number; total: numb
 
 export function getPhaseColor(phase: ExercisePhase): string {
   switch (phase) {
+    case 'countdown':
+      return '#eab308'
     case 'warmupA_hold':
     case 'warmupB_hold':
     case 'pulse_tick':
@@ -167,6 +179,10 @@ export function getCircleDisplay(state: ExerciseState): { big: string; sub: stri
   if (phase === 'idle') return { big: '', sub: 'Tap Start' }
   if (phase === 'completed') return { big: '', sub: 'Done!' }
 
+  if (phase === 'countdown') {
+    return { big: `${Math.ceil(state.timeRemaining)}`, sub: 'Get Ready' }
+  }
+
   if (isBreakPhase(phase)) {
     return { big: `${Math.ceil(state.timeRemaining)}`, sub: 'Break' }
   }
@@ -191,7 +207,7 @@ export function getCircleDisplay(state: ExerciseState): { big: string; sub: stri
 export function getProgressPercent(state: ExerciseState): number {
   const { phase } = state
 
-  if (phase === 'idle') return 0
+  if (phase === 'idle' || phase === 'countdown') return 0
   if (phase === 'completed') return 100
 
   const warmupAWeight = 15

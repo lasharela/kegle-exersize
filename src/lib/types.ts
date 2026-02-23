@@ -30,6 +30,7 @@ export interface Exercise {
 
 export type ExercisePhase =
   | 'idle'
+  | 'countdown'
   | 'warmupA_hold'
   | 'warmupA_rest'
   | 'breakA'

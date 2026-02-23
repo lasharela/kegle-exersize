@@ -19,8 +19,10 @@ export default function Exercise() {
   const [showCompletion, setShowCompletion] = useState(false)
   const [pointsEarned, setPointsEarned] = useState(0)
   const prevPhase = useRef(state.phase)
+  const prevPulses = useRef(state.pulsesCompleted)
   const startTimeRef = useRef<string>('')
 
+  // Sound triggers on phase changes (warmups, breaks, completion)
   useEffect(() => {
     const prev = prevPhase.current
     const curr = state.phase
@@ -28,21 +30,33 @@ export default function Exercise() {
 
     if (prev === curr) return
 
-    // Warmup: 3-note ascending chime on squeeze, descending on release
+    // Warmup: ascending chime on squeeze/hold, descending on release
     if (curr === 'warmupA_hold' || curr === 'warmupB_hold') squeezeChime()
     if (curr === 'warmupA_rest' || curr === 'warmupB_rest') releaseChime()
 
-    // Fast pulses: sharp beep on every tick
-    if (curr === 'pulse_tick') fastBeep()
-
-    // Breaks: distinct long melody
+    // Breaks: distinct melody
     if (isBreakPhase(curr)) breakSound()
+
+    // First pulse beep when entering pulse phase
+    if (curr === 'pulse_tick' && prev !== 'pulse_tick') fastBeep()
+
     if (curr === 'completed') {
       completionFanfare()
       saveExercise()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase])
+
+  // Beep on every pulse tick (pulsesCompleted changes while phase stays pulse_tick)
+  useEffect(() => {
+    const prev = prevPulses.current
+    prevPulses.current = state.pulsesCompleted
+
+    if (state.phase === 'pulse_tick' && state.pulsesCompleted > prev) {
+      fastBeep()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.pulsesCompleted])
 
   const saveExercise = async () => {
     if (!profile) return
@@ -95,6 +109,7 @@ export default function Exercise() {
   }
 
   const { phase, isPaused } = state
+  const isRunning = phase !== 'idle' && phase !== 'completed' && phase !== 'countdown'
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-4 pb-8">
@@ -112,7 +127,7 @@ export default function Exercise() {
           </button>
         )}
 
-        {phase !== 'idle' && phase !== 'completed' && (
+        {isRunning && (
           <>
             <button
               onClick={isPaused ? resume : pause}
