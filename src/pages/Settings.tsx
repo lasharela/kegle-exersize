@@ -12,9 +12,12 @@ export default function Settings() {
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [pulseInterval, setPulseInterval] = useState(profile?.pulseInterval ?? 1.5)
   const [saving, setSaving] = useState(false)
+  const [loadingExercises, setLoadingExercises] = useState(true)
 
   useEffect(() => {
     if (!profile) return
+    setPulseInterval(profile.pulseInterval)
+    setLoadingExercises(true)
     databases
       .listDocuments(DATABASE_ID, EXERCISES_COLLECTION, [
         Query.equal('userId', profile.userId),
@@ -27,6 +30,7 @@ export default function Settings() {
         checkBadges(docs)
       })
       .catch(console.error)
+      .finally(() => setLoadingExercises(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.userId])
 
@@ -65,7 +69,20 @@ export default function Settings() {
     })
   }
 
-  if (!profile) return null
+  if (!profile) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center px-4">
+        <p className="text-text-dim mb-4">Profile not loaded</p>
+        <p className="text-text-dim text-sm mb-6">Try logging out and registering a new account.</p>
+        <button
+          onClick={logout}
+          className="bg-surface border border-border text-text-dim font-semibold rounded-lg py-3 px-6 active:scale-[0.98] transition-transform"
+        >
+          Log Out
+        </button>
+      </div>
+    )
+  }
 
   const weekStart = new Date(profile.weekStartDate)
   const now = new Date()
@@ -110,7 +127,11 @@ export default function Settings() {
       <div>
         <h2 className="font-semibold mb-3">This Week</h2>
         <div className="bg-surface rounded-xl p-4">
-          <WeekCalendar exercises={exercises} weekStartDate={profile.weekStartDate} />
+          {loadingExercises ? (
+            <p className="text-text-dim text-sm text-center py-4">Loading...</p>
+          ) : (
+            <WeekCalendar exercises={exercises} weekStartDate={profile.weekStartDate} />
+          )}
         </div>
       </div>
 

@@ -69,6 +69,9 @@ export function skipPhase(state: ExerciseState): ExerciseState {
   if (phase === 'breakB') {
     return { ...state, phase: 'pulse_tick', timeRemaining: state.pulseInterval }
   }
+  if (phase === 'pulse_tick') {
+    return { ...state, phase: 'completed', timeRemaining: 0 }
+  }
   if (phase === 'pulse_break') {
     return { ...state, phase: 'pulse_tick', timeRemaining: state.pulseInterval }
   }

@@ -139,7 +139,7 @@ export default function Exercise() {
               onClick={skip}
               className="bg-surface border border-yellow/40 text-yellow font-semibold rounded-full px-6 py-3 active:scale-95 transition-transform"
             >
-              Skip
+              {phase === 'pulse_tick' || phase === 'pulse_break' ? 'Finish' : 'Skip'}
             </button>
             <button
               onClick={stop}
