@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Query } from 'appwrite'
-import { Shield } from 'lucide-react'
+import { Shield, ChevronDown } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { databases, DATABASE_ID, EXERCISES_COLLECTION } from '../lib/appwrite'
 import { BADGES, evaluateBadges } from '../lib/badges'
 import type { Exercise } from '../lib/types'
+import WeekCalendar from '../components/WeekCalendar'
 import HistoryGrid from '../components/HistoryGrid'
 import BadgeCard from '../components/BadgeCard'
 
@@ -14,6 +15,7 @@ export default function Settings() {
   const [pulseInterval, setPulseInterval] = useState(profile?.pulseInterval ?? 1.5)
   const [saving, setSaving] = useState(false)
   const [loadingExercises, setLoadingExercises] = useState(true)
+  const [showHistory, setShowHistory] = useState(false)
 
   useEffect(() => {
     if (!profile) return
@@ -124,16 +126,32 @@ export default function Settings() {
         </div>
       )}
 
-      {/* History Grid */}
+      {/* This Week */}
       <div>
-        <h2 className="font-semibold mb-3">Last 30 Days</h2>
+        <h2 className="font-semibold mb-3">This Week</h2>
         <div className="bg-surface rounded-xl p-4">
           {loadingExercises ? (
             <p className="text-text-dim text-sm text-center py-4">Loading...</p>
           ) : (
-            <HistoryGrid exercises={exercises} />
+            <WeekCalendar exercises={exercises} weekStartDate={profile.weekStartDate} />
           )}
         </div>
+        <button
+          onClick={() => setShowHistory((v) => !v)}
+          className="flex items-center gap-1 text-text-dim text-xs mt-2 ml-1 active:opacity-70"
+        >
+          <ChevronDown size={14} className={`transition-transform ${showHistory ? 'rotate-180' : ''}`} />
+          {showHistory ? 'Hide' : 'Show'} last 30 days
+        </button>
+        {showHistory && (
+          <div className="bg-surface rounded-xl p-4 mt-2">
+            {loadingExercises ? (
+              <p className="text-text-dim text-sm text-center py-4">Loading...</p>
+            ) : (
+              <HistoryGrid exercises={exercises} registrationDate={profile.weekStartDate} />
+            )}
+          </div>
+        )}
       </div>
 
       {/* Shields */}
