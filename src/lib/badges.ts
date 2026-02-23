@@ -5,42 +5,42 @@ export const BADGES: Badge[] = [
     id: 'first_steps',
     name: 'First Steps',
     description: 'Complete your first exercise',
-    icon: '👣',
+    icon: 'Footprints',
     evaluate: (_p, exercises) => exercises.some((e) => e.completed),
   },
   {
     id: 'pulse_500',
     name: '500 Club',
     description: 'Complete 500 total pulses',
-    icon: '💪',
+    icon: 'Dumbbell',
     evaluate: (p) => p.totalPulses >= 500,
   },
   {
     id: 'pulse_1000',
     name: '1K Pulser',
     description: 'Complete 1,000 total pulses',
-    icon: '🔥',
+    icon: 'Flame',
     evaluate: (p) => p.totalPulses >= 1000,
   },
   {
     id: 'pulse_1500',
     name: 'Power House',
     description: 'Complete 1,500 total pulses',
-    icon: '⚡',
+    icon: 'Zap',
     evaluate: (p) => p.totalPulses >= 1500,
   },
   {
     id: 'pulse_2000',
     name: 'Legendary',
     description: 'Complete 2,000 total pulses',
-    icon: '👑',
+    icon: 'Crown',
     evaluate: (p) => p.totalPulses >= 2000,
   },
   {
     id: 'early_bird',
     name: 'Early Bird',
     description: 'Complete an exercise before 7 AM',
-    icon: '🌅',
+    icon: 'Sunrise',
     evaluate: (_p, exercises) => exercises.some((e) => {
       const hour = new Date(e.startTime).getHours()
       return e.completed && hour < 7
@@ -50,7 +50,7 @@ export const BADGES: Badge[] = [
     id: 'night_owl',
     name: 'Night Owl',
     description: 'Complete an exercise after 11 PM',
-    icon: '🦉',
+    icon: 'Moon',
     evaluate: (_p, exercises) => exercises.some((e) => {
       const hour = new Date(e.startTime).getHours()
       return e.completed && hour >= 23
@@ -60,35 +60,35 @@ export const BADGES: Badge[] = [
     id: 'streak_7',
     name: 'Week Warrior',
     description: 'Complete 7 consecutive days',
-    icon: '🗓️',
+    icon: 'Calendar',
     evaluate: (_p, exercises) => hasStreak(exercises, 7),
   },
   {
     id: 'streak_30',
     name: 'Monthly Master',
     description: 'Complete 30 consecutive days',
-    icon: '🏆',
+    icon: 'Trophy',
     evaluate: (_p, exercises) => hasStreak(exercises, 30),
   },
   {
     id: 'peak_performance',
     name: 'Peak Performance',
     description: 'Reach the 2000 pulse target',
-    icon: '🏔️',
+    icon: 'Mountain',
     evaluate: (p) => p.currentTarget >= 2000,
   },
   {
     id: 'shield_buyer',
     name: 'Shield Bearer',
     description: 'Purchase your first shield',
-    icon: '🛡️',
+    icon: 'Shield',
     evaluate: (p) => p.shieldsOwned > 0 || p.shieldsUsed.length > 0,
   },
   {
     id: 'points_100',
     name: 'Century',
     description: 'Earn 100 total points',
-    icon: '💯',
+    icon: 'Award',
     evaluate: (p) => p.totalPoints >= 100,
   },
 ]

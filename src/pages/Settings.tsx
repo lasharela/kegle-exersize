@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Query } from 'appwrite'
+import { Shield } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { databases, DATABASE_ID, EXERCISES_COLLECTION } from '../lib/appwrite'
 import { BADGES, evaluateBadges } from '../lib/badges'
 import type { Exercise } from '../lib/types'
-import WeekCalendar from '../components/WeekCalendar'
+import HistoryGrid from '../components/HistoryGrid'
 import BadgeCard from '../components/BadgeCard'
 
 export default function Settings() {
@@ -123,14 +124,14 @@ export default function Settings() {
         </div>
       )}
 
-      {/* Weekly Calendar */}
+      {/* History Grid */}
       <div>
-        <h2 className="font-semibold mb-3">This Week</h2>
+        <h2 className="font-semibold mb-3">Last 30 Days</h2>
         <div className="bg-surface rounded-xl p-4">
           {loadingExercises ? (
             <p className="text-text-dim text-sm text-center py-4">Loading...</p>
           ) : (
-            <WeekCalendar exercises={exercises} weekStartDate={profile.weekStartDate} />
+            <HistoryGrid exercises={exercises} />
           )}
         </div>
       </div>
@@ -139,17 +140,19 @@ export default function Settings() {
       <div>
         <h2 className="font-semibold mb-3">Shields</h2>
         <div className="bg-surface rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between">
             <div>
               <p className="text-sm">Owned: <span className="text-blue font-bold">{profile.shieldsOwned}</span> / 2</p>
-              <p className="text-text-dim text-xs">Protects a missed day from breaking your streak</p>
+              <p className="text-text-dim text-xs mt-1">Protects a missed day from breaking your streak</p>
             </div>
             <button
               onClick={handleBuyShield}
               disabled={profile.totalPoints < 25 || profile.shieldsOwned >= 2}
-              className="bg-blue text-white font-semibold rounded-lg py-2 px-4 text-sm disabled:opacity-40 active:scale-95 transition-transform"
+              className="bg-blue text-white rounded-xl py-3 px-5 disabled:opacity-40 active:scale-95 transition-transform flex flex-col items-center gap-1 shrink-0"
             >
-              Buy (25 pts)
+              <Shield size={18} />
+              <span className="font-semibold text-sm whitespace-nowrap">Buy Shield</span>
+              <span className="text-xs text-white/70">25 points</span>
             </button>
           </div>
         </div>
