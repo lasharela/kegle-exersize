@@ -7,10 +7,13 @@ interface Props {
   elapsed: number
   pointsEarned: number
   streakDays: number
+  canLevelUp?: boolean
+  nextTarget?: number | null
+  onLevelUp?: () => void
   onClose: () => void
 }
 
-export default function CompletionOverlay({ pulsesCompleted, targetPulses, elapsed, pointsEarned, streakDays, onClose }: Props) {
+export default function CompletionOverlay({ pulsesCompleted, targetPulses, elapsed, pointsEarned, streakDays, canLevelUp, nextTarget, onLevelUp, onClose }: Props) {
   useEffect(() => {
     confetti({
       particleCount: 150,
@@ -58,11 +61,26 @@ export default function CompletionOverlay({ pulsesCompleted, targetPulses, elaps
           </div>
         </div>
 
+        {canLevelUp && nextTarget != null && (
+          <div className="bg-surface border border-yellow/40 rounded-xl p-4 mb-4">
+            <p className="font-semibold text-yellow mb-1">A full week at this level! 🏆</p>
+            <p className="text-text-dim text-sm mb-3">
+              Ready to level up to {nextTarget} pulses?
+            </p>
+            <button
+              onClick={onLevelUp}
+              className="bg-yellow text-bg font-bold rounded-lg py-3 px-8 w-full active:scale-[0.98] transition-transform"
+            >
+              Level Up to {nextTarget}
+            </button>
+          </div>
+        )}
+
         <button
           onClick={onClose}
           className="bg-primary text-white font-semibold rounded-lg py-3 px-8 w-full active:scale-[0.98] transition-transform"
         >
-          Continue
+          {canLevelUp ? 'Not yet, stay here' : 'Continue'}
         </button>
       </div>
     </div>

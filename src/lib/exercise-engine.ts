@@ -14,6 +14,9 @@ const BREAK_DURATION = 30
 const PULSES_PER_REST = 200
 const COUNTDOWN_SECONDS = 3
 
+// At or below this target, skip the long warmup (Phase 2) so light levels start gently.
+export const LIGHT_LEVEL_MAX = 250
+
 // Tick interval in seconds (100ms ticks)
 export const TICK_MS = 100
 export const TICK_S = TICK_MS / 1000
@@ -61,6 +64,9 @@ export function skipPhase(state: ExerciseState): ExerciseState {
     return { ...state, phase: 'breakA', timeRemaining: BREAK_DURATION, warmupARep: WARMUP_A_REPS }
   }
   if (phase === 'breakA') {
+    if (state.targetPulses <= LIGHT_LEVEL_MAX) {
+      return { ...state, phase: 'pulse_tick', timeRemaining: state.pulseInterval }
+    }
     return { ...state, phase: 'warmupB_hold', timeRemaining: WARMUP_B_HOLD, warmupBRep: 1 }
   }
   if (phase === 'warmupB_hold' || phase === 'warmupB_rest') {
@@ -98,6 +104,9 @@ function advancePhase(state: ExerciseState): ExerciseState {
   }
 
   if (phase === 'breakA') {
+    if (state.targetPulses <= LIGHT_LEVEL_MAX) {
+      return { ...state, phase: 'pulse_tick', timeRemaining: state.pulseInterval }
+    }
     return { ...state, phase: 'warmupB_hold', timeRemaining: WARMUP_B_HOLD, warmupBRep: 1 }
   }
 

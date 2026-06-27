@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Query } from 'appwrite'
-import { Shield, ChevronDown } from 'lucide-react'
+import { Shield, ChevronDown, Minus, Plus } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useLeveling } from '../hooks/useLeveling'
 import { databases, DATABASE_ID, EXERCISES_COLLECTION } from '../lib/appwrite'
 import { BADGES, evaluateBadges } from '../lib/badges'
+import { daysCompletedThisLevel, canLevelUp, DAYS_TO_LEVEL_UP } from '../lib/progression'
+import { levelNumber, nextTarget, prevTarget } from '../lib/levels'
+import { soundEnabled, setSoundEnabled, hapticsEnabled, setHapticsEnabled } from '../lib/settings'
 import type { Exercise } from '../lib/types'
 import WeekCalendar from '../components/WeekCalendar'
 import HistoryGrid from '../components/HistoryGrid'
@@ -11,11 +15,17 @@ import BadgeCard from '../components/BadgeCard'
 
 export default function Settings() {
   const { profile, updateProfile, logout } = useAuth()
+  const { levelUp, levelDown } = useLeveling(profile, updateProfile)
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [pulseInterval, setPulseInterval] = useState(profile?.pulseInterval ?? 1.5)
   const [saving, setSaving] = useState(false)
   const [loadingExercises, setLoadingExercises] = useState(true)
   const [showHistory, setShowHistory] = useState(false)
+  const [sound, setSound] = useState(soundEnabled())
+  const [haptics, setHaptics] = useState(hapticsEnabled())
+
+  const toggleSound = () => { const v = !sound; setSound(v); setSoundEnabled(v) }
+  const toggleHaptics = () => { const v = !haptics; setHaptics(v); setHapticsEnabled(v) }
 
   useEffect(() => {
     if (!profile) return
@@ -61,17 +71,6 @@ export default function Settings() {
     })
   }
 
-  const handleWeekProgression = async () => {
-    if (!profile) return
-    const newTarget = Math.min(profile.currentTarget + 200, 2000)
-    const today = new Date().toISOString().split('T')[0]
-    await updateProfile({
-      currentWeek: profile.currentWeek + 1,
-      currentTarget: newTarget,
-      weekStartDate: today,
-    })
-  }
-
   if (!profile) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center px-4">
@@ -87,10 +86,11 @@ export default function Settings() {
     )
   }
 
-  const weekStart = new Date(profile.weekStartDate)
-  const now = new Date()
-  const daysSinceStart = Math.floor((now.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24))
-  const showProgression = daysSinceStart >= 7
+  const level = levelNumber(profile.currentTarget)
+  const up = nextTarget(profile.currentTarget)
+  const down = prevTarget(profile.currentTarget)
+  const daysDone = daysCompletedThisLevel(exercises, profile)
+  const canUp = canLevelUp(exercises, profile)
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
@@ -105,26 +105,63 @@ export default function Settings() {
           <p className="text-text-dim text-xs">Total Pulses</p>
         </div>
         <div className="bg-surface rounded-xl p-3 text-center">
-          <p className="text-xl font-bold text-yellow">Week {profile.currentWeek}</p>
+          <p className="text-xl font-bold text-yellow">Lvl {level}</p>
           <p className="text-text-dim text-xs">Target: {profile.currentTarget}</p>
         </div>
       </div>
 
-      {/* Week Progression */}
-      {showProgression && profile.currentTarget < 2000 && (
-        <div className="bg-surface border border-yellow/30 rounded-xl p-4">
-          <p className="font-semibold text-yellow mb-2">Week Complete!</p>
-          <p className="text-text-dim text-sm mb-3">
-            Ready to increase your target from {profile.currentTarget} to {Math.min(profile.currentTarget + 200, 2000)} pulses?
-          </p>
-          <button
-            onClick={handleWeekProgression}
-            className="bg-yellow text-bg font-semibold rounded-lg py-2 px-4 text-sm active:scale-95 transition-transform"
-          >
-            Increase Target
-          </button>
+      {/* Level */}
+      <div className="bg-surface rounded-xl p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-semibold">Level {level}</p>
+            <p className="text-text-dim text-xs">{profile.currentTarget} pulses target</p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={levelDown}
+              disabled={down === null}
+              aria-label="Decrease level"
+              className="w-10 h-10 rounded-full bg-bg border border-border flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform"
+            >
+              <Minus size={18} />
+            </button>
+            <button
+              onClick={levelUp}
+              disabled={up === null}
+              aria-label="Increase level"
+              className="w-10 h-10 rounded-full bg-bg border border-border flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform"
+            >
+              <Plus size={18} />
+            </button>
+          </div>
         </div>
-      )}
+
+        {up !== null ? (
+          <div>
+            <div className="flex justify-between text-xs text-text-dim mb-1">
+              <span>Consistent days this level</span>
+              <span>{Math.min(daysDone, DAYS_TO_LEVEL_UP)}/{DAYS_TO_LEVEL_UP}</span>
+            </div>
+            <div className="h-2 bg-bg rounded-full overflow-hidden">
+              <div
+                className="h-full bg-yellow transition-all"
+                style={{ width: `${Math.min((daysDone / DAYS_TO_LEVEL_UP) * 100, 100)}%` }}
+              />
+            </div>
+            {canUp && (
+              <button
+                onClick={levelUp}
+                className="mt-3 bg-yellow text-bg font-semibold rounded-lg py-2 px-4 text-sm w-full active:scale-95 transition-transform"
+              >
+                Level up to {up} pulses
+              </button>
+            )}
+          </div>
+        ) : (
+          <p className="text-text-dim text-xs">Top level reached 🏆</p>
+        )}
+      </div>
 
       {/* This Week */}
       <div>
@@ -197,6 +234,21 @@ export default function Settings() {
               {saving ? 'Saving...' : 'Save'}
             </button>
           )}
+        </div>
+      </div>
+
+      {/* Sound & Haptics */}
+      <div>
+        <h2 className="font-semibold mb-3">Sound & Haptics</h2>
+        <div className="bg-surface rounded-xl p-4 space-y-3">
+          <label className="flex items-center justify-between cursor-pointer">
+            <span className="text-sm">Sound</span>
+            <input type="checkbox" checked={sound} onChange={toggleSound} className="w-5 h-5 accent-primary" />
+          </label>
+          <label className="flex items-center justify-between cursor-pointer">
+            <span className="text-sm">Haptics (vibration)</span>
+            <input type="checkbox" checked={haptics} onChange={toggleHaptics} className="w-5 h-5 accent-primary" />
+          </label>
         </div>
       </div>
 

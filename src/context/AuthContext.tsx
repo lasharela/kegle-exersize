@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         shieldsOwned: 0,
         shieldsUsed: [],
         currentWeek: 1,
-        currentTarget: 400,
+        currentTarget: 100,
         pulseInterval: 1.5,
         reminderTime: '09:00',
         notificationsEnabled: false,
@@ -130,6 +130,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await databases.updateDocument(DATABASE_ID, PROFILES_COLLECTION, profile.$id, rest)
     await refreshProfile()
   }
+
+  // One-time reset to the new starting level (100) for the pre-existing account.
+  // Guarded by the old default (400) so it never clobbers real progress, and by a
+  // localStorage flag so it runs at most once per device.
+  useEffect(() => {
+    if (!profile) return
+    if (localStorage.getItem('kegle.migratedTo100')) return
+    localStorage.setItem('kegle.migratedTo100', '1')
+    if (profile.currentTarget === 400) {
+      const today = new Date().toISOString().split('T')[0]
+      updateProfile({ currentTarget: 100, currentWeek: 1, weekStartDate: today }).catch(console.error)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.$id, profile?.currentTarget])
 
   return (
     <AuthContext.Provider value={{ user, profile, streakDays, loading, login, register, logout, refreshProfile, updateProfile }}>
