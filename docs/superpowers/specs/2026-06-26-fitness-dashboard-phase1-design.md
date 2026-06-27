@@ -19,7 +19,7 @@
 ## Architecture
 
 Extend the existing app (React 19 + TS + Vite PWA, Tailwind 4, Appwrite, Cloudflare). Reuse:
-- The tick/timer engine pattern (`useTimer`), audio engine (`useAudioEngine`) and haptics (`haptics.ts`) from the Kegel work for rest-timer cues and rep prompts.
+- The tick/timer engine pattern (`useTimer`), the HTML-Audio sound hook (`useSound`) and haptics (`haptics.ts`) from the Kegel work for rest-timer cues and rep prompts. **iOS note:** use `useSound` (HTML `<audio>` + `audioSession='playback'`), NOT Web Audio — Web Audio is muted by the iOS silent switch and unlocks unreliably (see the sound regression fix).
 - The consistency-gated progression pattern (`progression.ts`) generalized to any activity.
 
 ### Information architecture (routing)
@@ -86,7 +86,7 @@ Rationale: one flexible log collection + one JSON state field avoids a schema ex
 - The core new feature. One pass through `program.STRENGTH_CIRCUIT`.
 - **Per exercise:** large demo image (from media DB), exercise name (English), the target reps for *this* exercise at the user's current level, and a "Done set" button.
 - **Sets:** each exercise has a `sets` count (swings = 3, the rest = 1 by default). The player loops the sets of an exercise before advancing to the next.
-- **Between every set and every exercise:** a rest timer (default 120 s, from `restSec`) with skip/extend, audio + haptic cue at zero — reusing `useAudioEngine` / `haptics`.
+- **Between every set and every exercise:** a rest timer (default 120 s, from `restSec`) with skip/extend, audio + haptic cue at zero — reusing `useSound` / `haptics`.
 - On finish: write an `activityLogs` strength entry (reps per exercise from `trainingState`), then evaluate progression (below).
 - Default circuit (start values; 18 kg KB unless noted):
 
