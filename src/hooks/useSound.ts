@@ -1,21 +1,11 @@
 import { useCallback, useRef } from 'react'
 import { soundEnabled } from '../lib/settings'
+import { primeAudioSession, startSilentKeepAlive } from '../lib/audio-session'
 
 function createAudio(src: string) {
   const audio = new Audio(src)
   audio.preload = 'auto'
   return audio
-}
-
-// iOS 16.4+: route audio through the "playback" session so cues are audible even
-// when the hardware silent switch is on. Best-effort; ignored where unsupported.
-function enablePlaybackSession() {
-  try {
-    const nav = navigator as unknown as { audioSession?: { type: string } }
-    if (nav.audioSession) nav.audioSession.type = 'playback'
-  } catch {
-    /* unsupported — ignore */
-  }
 }
 
 export function useSound() {
@@ -49,7 +39,8 @@ export function useSound() {
   const completionFanfare = useCallback(() => play('complete'), [play])
 
   const initAudio = useCallback(() => {
-    enablePlaybackSession()
+    primeAudioSession()
+    startSilentKeepAlive()
     const s = getSounds()
     Object.values(s).forEach((a) => {
       a.load()

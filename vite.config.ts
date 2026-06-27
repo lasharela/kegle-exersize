@@ -26,7 +26,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg,woff2,mp3}'],
+        globPatterns: ['**/*.{js,css,html,png,svg,woff2,mp3,wav}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/appwrite\.lasharela\.com/,
