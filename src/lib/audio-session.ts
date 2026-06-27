@@ -32,7 +32,7 @@ export function startSilentKeepAlive() {
       keepAlive = new Audio('/silence.wav')
       keepAlive.loop = true
       keepAlive.preload = 'auto'
-      keepAlive.volume = 0.001 // inaudible, but a real signal keeps the session live
+      keepAlive.volume = 1 // digital-silence samples — inaudible, but a real media signal
     }
     if (keepAlive.paused) void keepAlive.play().catch(() => {})
   } catch {

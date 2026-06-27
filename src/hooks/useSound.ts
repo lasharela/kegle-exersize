@@ -2,35 +2,56 @@ import { useCallback, useRef } from 'react'
 import { soundEnabled } from '../lib/settings'
 import { primeAudioSession, startSilentKeepAlive } from '../lib/audio-session'
 
-function createAudio(src: string) {
-  const audio = new Audio(src)
-  audio.preload = 'auto'
-  return audio
+// Cues play through Web Audio (decoded mp3 buffers), NOT HTML5 <audio>. In a
+// standalone iOS PWA, HTML5 <audio> is routed to the ringer channel (muted by the
+// silent switch); Web Audio, kept on the media channel by a continuously-playing
+// silent track (see audio-session.ts), is audible even when the phone is silenced.
+// Web Audio buffer sources also have no rapid-replay lag (good for fast pulses).
+const FILES: Record<string, string> = {
+  chimeUp: '/chime-up.mp3',
+  chimeDown: '/chime-down.mp3',
+  beep: '/beep.mp3',
+  breakStart: '/break-start.mp3',
+  complete: '/complete.mp3',
+}
+
+function createCtx(): AudioContext | null {
+  const AC =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+  return AC ? new AC() : null
 }
 
 export function useSound() {
-  const sounds = useRef<Record<string, HTMLAudioElement> | null>(null)
+  const ctxRef = useRef<AudioContext | null>(null)
+  const buffersRef = useRef<Record<string, AudioBuffer>>({})
 
-  const getSounds = useCallback(() => {
-    if (!sounds.current) {
-      sounds.current = {
-        chimeUp: createAudio('/chime-up.mp3'),
-        chimeDown: createAudio('/chime-down.mp3'),
-        beep: createAudio('/beep.mp3'),
-        breakStart: createAudio('/break-start.mp3'),
-        complete: createAudio('/complete.mp3'),
-      }
-    }
-    return sounds.current
+  const ensureBuffers = useCallback(async (ctx: AudioContext) => {
+    await Promise.all(
+      Object.entries(FILES).map(async ([name, url]) => {
+        if (buffersRef.current[name]) return
+        try {
+          const res = await fetch(url)
+          const arr = await res.arrayBuffer()
+          buffersRef.current[name] = await ctx.decodeAudioData(arr)
+        } catch {
+          /* leave undefined — that cue becomes a no-op */
+        }
+      })
+    )
   }, [])
 
   const play = useCallback((name: string) => {
     if (!soundEnabled()) return
-    const s = getSounds()[name]
-    if (!s) return
-    s.currentTime = 0
-    s.play().catch(() => {})
-  }, [getSounds])
+    const ctx = ctxRef.current
+    const buf = buffersRef.current[name]
+    if (!ctx || !buf) return
+    if (ctx.state === 'suspended') void ctx.resume()
+    const src = ctx.createBufferSource()
+    src.buffer = buf
+    src.connect(ctx.destination)
+    src.start()
+  }, [])
 
   const squeezeChime = useCallback(() => play('chimeUp'), [play])
   const releaseChime = useCallback(() => play('chimeDown'), [play])
@@ -38,15 +59,17 @@ export function useSound() {
   const breakSound = useCallback(() => play('breakStart'), [play])
   const completionFanfare = useCallback(() => play('complete'), [play])
 
+  // Unlock on the user's Start gesture: set the playback session, start the silent
+  // media-channel track, create + resume the AudioContext, and decode the cues.
   const initAudio = useCallback(() => {
     primeAudioSession()
     startSilentKeepAlive()
-    const s = getSounds()
-    Object.values(s).forEach((a) => {
-      a.load()
-      a.play().then(() => { a.pause(); a.currentTime = 0 }).catch(() => {})
-    })
-  }, [getSounds])
+    if (!ctxRef.current) ctxRef.current = createCtx()
+    const ctx = ctxRef.current
+    if (!ctx) return
+    if (ctx.state === 'suspended') void ctx.resume()
+    void ensureBuffers(ctx)
+  }, [ensureBuffers])
 
   return { squeezeChime, releaseChime, fastBeep, breakSound, completionFanfare, initAudio }
 }
