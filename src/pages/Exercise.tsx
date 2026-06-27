@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { ID, Query, Permission, Role } from 'appwrite'
 import { useAuth } from '../context/AuthContext'
 import { useExercise } from '../hooks/useExercise'
-import { useAudioEngine } from '../hooks/useAudioEngine'
+import { useSound } from '../hooks/useSound'
 import { useLeveling } from '../hooks/useLeveling'
 import { canLevelUp } from '../lib/progression'
 import { nextTarget, levelNumber } from '../lib/levels'
@@ -20,7 +20,7 @@ export default function Exercise() {
   const intervalMs = (profile?.pulseInterval ?? 1.5) * 1000
 
   const { state, elapsed, start, pause, resume, stop, reset, skip } = useExercise(target, intervalMs)
-  const { squeezeChime, releaseChime, breakSound, completionFanfare, initAudio } = useAudioEngine()
+  const { squeezeChime, releaseChime, fastBeep, breakSound, completionFanfare, initAudio } = useSound()
   const { levelUp } = useLeveling(profile, updateProfile)
   const [showCompletion, setShowCompletion] = useState(false)
   const [pointsEarned, setPointsEarned] = useState(0)
@@ -44,8 +44,8 @@ export default function Exercise() {
     // Breaks: distinct tone + buzz
     if (isBreakPhase(curr)) { breakSound(); breakBuzz() }
 
-    // Haptic tap when entering the fast-pulse phase
-    if (curr === 'pulse_tick' && prev !== 'pulse_tick') pulseTap()
+    // Beep + haptic tap when entering the fast-pulse phase
+    if (curr === 'pulse_tick' && prev !== 'pulse_tick') { fastBeep(); pulseTap() }
 
     if (curr === 'completed') {
       completionFanfare()
@@ -55,12 +55,13 @@ export default function Exercise() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase])
 
-  // Haptic tap on every pulse tick (per-pulse feedback — no audio spam)
+  // Beep + haptic tap on every pulse tick (sound is the reliable iOS channel)
   useEffect(() => {
     const prev = prevPulses.current
     prevPulses.current = state.pulsesCompleted
 
     if (state.phase === 'pulse_tick' && state.pulsesCompleted > prev) {
+      fastBeep()
       pulseTap()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
