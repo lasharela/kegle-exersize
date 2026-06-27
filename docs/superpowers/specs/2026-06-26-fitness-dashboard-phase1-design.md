@@ -40,7 +40,7 @@ All program numbers live in one typed module `src/lib/program.ts`:
 ```
 WEEKLY_SCHEDULE: which activity types run on which weekday
 WARMUP: ordered warm-up moves (name, mediaKey, durationSec | reps)
-STRENGTH_CIRCUIT: ordered exercises (name, ru, mediaKey, sets, startReps, perSide, rampStep, restSec)
+STRENGTH_CIRCUIT: ordered exercises (name, mediaKey, sets, startReps, perSide, rampStep, restSec)
 RUNNING: startMinutes, rampStepMinutes
 PROGRESSION: sessionsToRamp (consistency gate), default restSec
 ```
@@ -84,21 +84,21 @@ Rationale: one flexible log collection + one JSON state field avoids a schema ex
 
 ### 4. Strength circuit player — `src/pages/Strength.tsx`
 - The core new feature. One pass through `program.STRENGTH_CIRCUIT`.
-- **Per exercise:** large demo image (from media DB), exercise name (EN + RU), the target reps for *this* exercise at the user's current level, and a "Done set" button.
+- **Per exercise:** large demo image (from media DB), exercise name (English), the target reps for *this* exercise at the user's current level, and a "Done set" button.
 - **Sets:** each exercise has a `sets` count (swings = 3, the rest = 1 by default). The player loops the sets of an exercise before advancing to the next.
 - **Between every set and every exercise:** a rest timer (default 120 s, from `restSec`) with skip/extend, audio + haptic cue at zero — reusing `useAudioEngine` / `haptics`.
 - On finish: write an `activityLogs` strength entry (reps per exercise from `trainingState`), then evaluate progression (below).
 - Default circuit (start values; 18 kg KB unless noted):
 
-  | # | Exercise (EN) | RU | Start | Ramp |
-  |---|---|---|---|---|
-  | 1 | Kettlebell swing | Свинги | 3×15 | +3 swings |
-  | 2 | Upright row | Протяжка | 12 | +2 |
-  | 3 | Goblet squat | Приседания | 12 | +2 |
-  | 4 | Lunge | Выпады | 8 / leg | +1 / leg |
-  | 5 | Overhead press | Жим над головой | 10 | +2 |
-  | 6 | Push-up (knees OK) | Анжуманя | 5 | +1 |
-  | 7 | Bent-over row | Тяга к поясу | 12 / side | +2 / side |
+  | # | Exercise | Start | Ramp |
+  |---|---|---|---|
+  | 1 | Kettlebell swing | 3×15 | +3 swings |
+  | 2 | Upright row | 12 | +2 |
+  | 3 | Goblet squat | 12 | +2 |
+  | 4 | Lunge | 8 / leg | +1 / leg |
+  | 5 | Overhead press | 10 | +2 |
+  | 6 | Push-up (knees OK) | 5 | +1 |
+  | 7 | Bent-over row | 12 / side | +2 / side |
 
   (Swings stored as 3 sets of 15; the "reps" shown ramps slowly. All numbers are coach-tunable.)
 
