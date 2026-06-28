@@ -18,7 +18,7 @@ export const STRENGTH_CIRCUIT: StrengthExercise[] = [
   { key: 'upright_row',   name: 'Upright row',      mediaKey: 'upright_row',      sets: 1, startReps: 12, perSide: false, rampStep: 2, restSec: R },
   { key: 'goblet_squat',  name: 'Goblet squat',     mediaKey: 'goblet_squat',     sets: 1, startReps: 12, perSide: false, rampStep: 2, restSec: R },
   { key: 'lunge',         name: 'Lunge',            mediaKey: 'lunge',            sets: 1, startReps: 8,  perSide: true,  rampStep: 1, restSec: R },
-  { key: 'overhead_press',name: 'Overhead press',   mediaKey: 'overhead_press',   sets: 1, startReps: 10, perSide: false, rampStep: 2, restSec: R },
+  { key: 'overhead_press',name: 'Overhead press',   mediaKey: 'overhead_press',   sets: 1, startReps: 10, perSide: true,  rampStep: 2, restSec: R },
   { key: 'pushup',        name: 'Push-up',          mediaKey: 'pushup',           sets: 1, startReps: 5,  perSide: false, rampStep: 1, restSec: R },
   { key: 'bent_row',      name: 'Bent-over row',    mediaKey: 'bent_over_row',    sets: 1, startReps: 12, perSide: true,  rampStep: 2, restSec: R },
   { key: 'glute_bridge',  name: 'Weighted glute bridge', mediaKey: 'glute_bridge', sets: 1, startReps: 12, perSide: false, rampStep: 2, restSec: R },
