@@ -11,7 +11,10 @@ export default function Header() {
 
   return (
     <header className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-      <div className="flex items-center gap-4">
+      <button
+        onClick={() => navigate('/')}
+        className="flex items-center gap-4 cursor-pointer active:opacity-70 transition-opacity"
+      >
         <div className="flex items-center gap-1.5">
           <span className="text-green font-bold text-lg">{profile?.totalPoints ?? 0}</span>
           <span className="text-text-dim text-xs">pts</span>
@@ -22,7 +25,7 @@ export default function Header() {
             <span className="text-text-dim text-xs">day streak</span>
           </div>
         )}
-      </div>
+      </button>
 
       <button
         onClick={() => navigate(isSettings ? '/' : '/settings')}
