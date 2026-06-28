@@ -21,7 +21,9 @@ export default function ExerciseCard({ exercise, setIndex, totalSets, reps }: Pr
       <h2 className="text-text font-bold text-2xl text-center">{exercise.name}</h2>
       <p className="text-text-dim text-sm">Set {setIndex} of {totalSets}</p>
       <p className="text-primary font-bold text-5xl">
-        {exercise.perSide ? `${reps} / side` : `${reps} reps`}
+        {exercise.isHold
+          ? (exercise.perSide ? `${reps}s / side` : `${reps}s hold`)
+          : (exercise.perSide ? `${reps} / side` : `${reps} reps`)}
       </p>
     </div>
   )

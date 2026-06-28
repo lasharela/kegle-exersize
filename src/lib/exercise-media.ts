@@ -13,6 +13,10 @@ const GIF_KEYS = new Set([
   'pushup',
   'bent_over_row',
   'glute_bridge',
+  // core
+  'dead_bug',
+  'front_plank',
+  'side_plank',
   // warm-up
   'world_greatest_stretch',
   'band_reverse_fly',

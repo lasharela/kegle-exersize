@@ -4,6 +4,7 @@ export type ActivityType = 'kegel' | 'warmup' | 'strength' | 'run'
 export interface StrengthExercise {
   key: string; name: string; mediaKey: string
   sets: number; startReps: number; perSide: boolean; rampStep: number; restSec: number
+  isHold?: boolean // isometric hold — `startReps` is seconds, displayed "Ns hold"
 }
 export interface WarmupMove { key: string; name: string; mediaKey: string; durationSec: number }
 
@@ -21,6 +22,10 @@ export const STRENGTH_CIRCUIT: StrengthExercise[] = [
   { key: 'pushup',        name: 'Push-up',          mediaKey: 'pushup',           sets: 1, startReps: 5,  perSide: false, rampStep: 1, restSec: R },
   { key: 'bent_row',      name: 'Bent-over row',    mediaKey: 'bent_over_row',    sets: 1, startReps: 12, perSide: true,  rampStep: 2, restSec: R },
   { key: 'glute_bridge',  name: 'Weighted glute bridge', mediaKey: 'glute_bridge', sets: 1, startReps: 12, perSide: false, rampStep: 2, restSec: R },
+  // Core finisher (back-safe, anti-movement). Planks are holds (startReps = seconds).
+  { key: 'dead_bug',      name: 'Dead bug',    mediaKey: 'dead_bug',    sets: 1, startReps: 8,  perSide: true,  rampStep: 1, restSec: R },
+  { key: 'front_plank',   name: 'Front plank', mediaKey: 'front_plank', sets: 1, startReps: 30, perSide: false, rampStep: 5, restSec: R, isHold: true },
+  { key: 'side_plank',    name: 'Side plank',  mediaKey: 'side_plank',  sets: 1, startReps: 20, perSide: true,  rampStep: 5, restSec: R, isHold: true },
 ]
 
 // Animated warm-up (same GIF style as the strength circuit). Mobility -> activation
