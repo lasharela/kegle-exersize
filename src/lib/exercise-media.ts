@@ -18,10 +18,10 @@ const GIF_KEYS = new Set([
   'front_plank',
   'side_plank',
   // warm-up
-  'world_greatest_stretch',
-  'band_reverse_fly',
+  'spine_twist',
+  'lunge_twist',
+  'squat_reach_twist',
   'glute_bridge_march',
-  'inchworm',
   'mountain_climber',
 ])
 

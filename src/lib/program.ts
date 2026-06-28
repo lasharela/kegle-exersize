@@ -28,14 +28,14 @@ export const STRENGTH_CIRCUIT: StrengthExercise[] = [
   { key: 'side_plank',    name: 'Side plank',  mediaKey: 'side_plank',  sets: 1, startReps: 20, perSide: true,  rampStep: 5, restSec: R, isHold: true },
 ]
 
-// Animated warm-up (same GIF style as the strength circuit). Mobility -> activation
-// -> light cardio; uses the TRX band and includes glute/pelvic activation.
+// Animated warm-up (same GIF style as the strength circuit). Simple rotational
+// mobility -> activation -> light cardio. No equipment, no deep static stretches.
 export const WARMUP: WarmupMove[] = [
-  { key: 'wgs',         name: "World's greatest stretch", mediaKey: 'world_greatest_stretch', durationSec: 40 },
-  { key: 'band_fly',    name: 'Band reverse fly',         mediaKey: 'band_reverse_fly',       durationSec: 40 },
-  { key: 'glute_march', name: 'Glute bridge march',       mediaKey: 'glute_bridge_march',     durationSec: 40 },
-  { key: 'inchworm',    name: 'Inchworm',                 mediaKey: 'inchworm',               durationSec: 40 },
-  { key: 'mtn_climber', name: 'Mountain climber',         mediaKey: 'mountain_climber',       durationSec: 30 },
+  { key: 'spine_twist',  name: 'Spine twist',         mediaKey: 'spine_twist',        durationSec: 30 },
+  { key: 'lunge_twist',  name: 'Lunge with twist',    mediaKey: 'lunge_twist',        durationSec: 40 },
+  { key: 'squat_reach',  name: 'Squat reach & twist', mediaKey: 'squat_reach_twist',  durationSec: 40 },
+  { key: 'glute_march',  name: 'Glute bridge march',  mediaKey: 'glute_bridge_march', durationSec: 40 },
+  { key: 'mtn_climber',  name: 'Mountain climber',    mediaKey: 'mountain_climber',   durationSec: 30 },
 ]
 
 export const WEEKLY_SCHEDULE: Record<Weekday, ActivityType[]> = {
