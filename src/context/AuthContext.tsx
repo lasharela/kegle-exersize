@@ -3,6 +3,7 @@ import { ID, Query, Permission, Role, type Models } from 'appwrite'
 import { account, databases, DATABASE_ID, PROFILES_COLLECTION, EXERCISES_COLLECTION } from '../lib/appwrite'
 import { defaultTrainingState } from '../lib/training-state'
 import type { Profile, Exercise } from '../lib/types'
+import { localDateISO } from '../lib/date'
 
 interface AuthState {
   user: Models.User<Models.Preferences> | null
@@ -153,8 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (profile.trainingState) return
     if (localStorage.getItem('kegle.trainingSeeded')) return
     localStorage.setItem('kegle.trainingSeeded', '1')
-    const d = new Date()
-    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const today = localDateISO()
     updateProfile({ trainingState: JSON.stringify(defaultTrainingState(today)) }).catch(console.error)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.$id, profile?.trainingState])

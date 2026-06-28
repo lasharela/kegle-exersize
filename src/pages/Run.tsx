@@ -5,6 +5,7 @@ import { useSound } from '../hooks/useSound'
 import { useElapsed } from '../hooks/useTimer'
 import { parseTrainingState } from '../lib/training-state'
 import { RUNNING } from '../lib/program'
+import { localDateISO } from '../lib/date'
 import { logActivity, listActivityLogs } from '../lib/activity-log'
 import { shouldRamp } from '../lib/progression'
 import { completeCelebrate } from '../lib/haptics'
@@ -17,10 +18,7 @@ export default function Run() {
   const { fastBeep, completionFanfare, initAudio } = useSound()
 
   // Local YYYY-MM-DD (not toISOString which gives UTC)
-  const today = useMemo(() => {
-    const d = new Date()
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-  }, [])
+  const today = useMemo(() => localDateISO(), [])
 
   const state = useMemo(
     () => (profile ? parseTrainingState(profile, today) : null),

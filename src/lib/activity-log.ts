@@ -2,6 +2,7 @@ import { ID, Permission, Role, Query } from 'appwrite'
 import { databases, DATABASE_ID, ACTIVITYLOGS_COLLECTION } from './appwrite'
 import type { ActivityLog } from './types'
 import type { ActivityType } from './program'
+import { localDateISO } from './date'
 
 export async function logActivity(p: {
   userId: string; type: ActivityType; completed: boolean; durationSec: number; payload?: object
@@ -11,7 +12,7 @@ export async function logActivity(p: {
       DATABASE_ID, ACTIVITYLOGS_COLLECTION, ID.unique(),
       {
         userId: p.userId,
-        date: new Date().toISOString().split('T')[0],
+        date: localDateISO(),
         type: p.type,
         completed: p.completed,
         durationSec: p.durationSec,

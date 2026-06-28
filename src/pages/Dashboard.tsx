@@ -8,6 +8,8 @@ import { parseTrainingState } from '../lib/training-state'
 import { levelNumber } from '../lib/levels'
 import { databases, DATABASE_ID, EXERCISES_COLLECTION } from '../lib/appwrite'
 import type { ActivityType } from '../lib/program'
+import { STRENGTH_CIRCUIT } from '../lib/program'
+import { localDateISO } from '../lib/date'
 import type { ActivityLog, Exercise } from '../lib/types'
 import StatsHeader from '../components/StatsHeader'
 import ActivityCard from '../components/ActivityCard'
@@ -22,8 +24,7 @@ export default function Dashboard() {
   const [logs, setLogs] = useState<ActivityLog[]>([])
   const [kegelDates, setKegelDates] = useState<Set<string>>(new Set())
 
-  const d = new Date()
-  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const today = localDateISO()
 
   useEffect(() => {
     if (!profile?.userId) return
@@ -80,7 +81,7 @@ export default function Dashboard() {
     switch (type) {
       case 'kegel':    return { icon: '🩺', label: 'Kegel',    subtitle: `Level ${levelNumber(profile.currentTarget)} · ${profile.currentTarget} pulses`, route: '/kegel' }
       case 'warmup':   return { icon: '🔥', label: 'Warm-up',  subtitle: '~4 min · band + body',                                                          route: '/warmup' }
-      case 'strength': return { icon: '🏋️', label: 'Strength', subtitle: '7 moves · ~25 min',                                                              route: '/strength' }
+      case 'strength': return { icon: '🏋️', label: 'Strength', subtitle: `${STRENGTH_CIRCUIT.length} moves · ~25 min`,                                      route: '/strength' }
       case 'run':      return { icon: '🏃', label: 'Running',  subtitle: `${ts.runMinutes} min · easy`,                                                    route: '/run' }
     }
   }

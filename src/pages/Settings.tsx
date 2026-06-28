@@ -10,6 +10,7 @@ import { levelNumber, nextTarget, prevTarget } from '../lib/levels'
 import { soundEnabled, setSoundEnabled, hapticsEnabled, setHapticsEnabled } from '../lib/settings'
 import { parseTrainingState } from '../lib/training-state'
 import { STRENGTH_CIRCUIT, PROGRESSION } from '../lib/program'
+import { localDateISO } from '../lib/date'
 import { listActivityLogs } from '../lib/activity-log'
 import type { Exercise, ActivityLog } from '../lib/types'
 import WeekCalendar from '../components/WeekCalendar'
@@ -95,8 +96,7 @@ export default function Settings() {
     )
   }
 
-  const d = new Date()
-  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const today = localDateISO()
 
   const level = levelNumber(profile.currentTarget)
   const up = nextTarget(profile.currentTarget)

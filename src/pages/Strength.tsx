@@ -6,6 +6,7 @@ import { useTimer, useElapsed } from '../hooks/useTimer'
 import { buildSteps, useCircuit } from '../hooks/useCircuit'
 import { parseTrainingState } from '../lib/training-state'
 import { STRENGTH_CIRCUIT } from '../lib/program'
+import { localDateISO } from '../lib/date'
 import { logActivity, listActivityLogs } from '../lib/activity-log'
 import { shouldRamp } from '../lib/progression'
 import { pulseTap, squeezeBuzz, breakBuzz, completeCelebrate } from '../lib/haptics'
@@ -20,13 +21,7 @@ export default function Strength() {
   const { squeezeChime, fastBeep, breakSound, completionFanfare, initAudio } = useSound()
 
   // Local YYYY-MM-DD (not toISOString which gives UTC)
-  const today = useMemo(() => {
-    const d = new Date()
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${y}-${m}-${day}`
-  }, [])
+  const today = useMemo(() => localDateISO(), [])
 
   const state = useMemo(
     () => (profile ? parseTrainingState(profile, today) : null),
