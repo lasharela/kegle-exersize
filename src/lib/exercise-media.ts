@@ -1,9 +1,9 @@
-// Resolves a program `mediaKey` to a bundled animated demo GIF in
-// public/exercises/. Every strength + warm-up move uses the same consistent
-// ExerciseDB-style figure (non-commercial dataset; fine for personal use).
+// Resolves a program `mediaKey` to a bundled looping MP4 in public/exercises/.
+// We use MP4 video (not GIF) because iOS standalone PWAs render service-worker /
+// standalone GIFs as a frozen first frame — looping muted <video> plays reliably.
 // Unknown keys fall back to the app icon.
 
-const GIF_KEYS = new Set([
+const MEDIA_KEYS = new Set([
   // strength circuit
   'kettlebell_swing',
   'upright_row',
@@ -27,6 +27,10 @@ const GIF_KEYS = new Set([
 
 const FALLBACK = '/icon-192.png'
 
+export function hasVideo(mediaKey: string): boolean {
+  return MEDIA_KEYS.has(mediaKey)
+}
+
 export function mediaUrl(mediaKey: string): string {
-  return GIF_KEYS.has(mediaKey) ? `/exercises/${mediaKey}.gif` : FALLBACK
+  return MEDIA_KEYS.has(mediaKey) ? `/exercises/${mediaKey}.mp4` : FALLBACK
 }

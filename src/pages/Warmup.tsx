@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useSound } from '../hooks/useSound'
 import { useTimer, useElapsed } from '../hooks/useTimer'
 import { WARMUP } from '../lib/program'
-import { mediaUrl } from '../lib/exercise-media'
+import ExerciseMedia from '../components/ExerciseMedia'
 import { logActivity } from '../lib/activity-log'
 import { squeezeBuzz, releaseBuzz, completeCelebrate } from '../lib/haptics'
 
@@ -147,11 +147,10 @@ export default function Warmup() {
         Move {moveIndex + 1} of {WARMUP.length}
       </p>
 
-      {/* Exercise image — contain (no crop) + height cap, like the strength card */}
-      <img
-        src={mediaUrl(move.mediaKey)}
-        alt={move.name}
-        onError={(e) => { e.currentTarget.src = '/icon-192.png' }}
+      {/* Looping video — plays on iOS standalone (unlike GIFs); contain, height-capped */}
+      <ExerciseMedia
+        mediaKey={move.mediaKey}
+        name={move.name}
         className="w-full rounded-2xl object-contain bg-surface border border-border"
         style={{ maxHeight: '40vh' }}
       />

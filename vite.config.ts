@@ -26,8 +26,10 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg,woff2,mp3,wav,gif}'],
-        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        // NB: exercise .mp4 videos are deliberately NOT precached — iOS standalone
+        // PWAs mis-render media served from the SW cache (frozen GIFs / broken video
+        // range requests). They load from the network and HTTP-cache normally.
+        globPatterns: ['**/*.{js,css,html,png,svg,woff2,mp3,wav}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/appwrite\.lasharela\.com/,
