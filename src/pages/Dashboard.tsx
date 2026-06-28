@@ -19,6 +19,7 @@ type ActivityMeta = { icon: string; label: string; subtitle: string; route: stri
 
 const ACTIVITY_ICON: Record<ActivityType, string> = { kegel: '🩺', warmup: '🔥', strength: '🏋️', run: '🏃' }
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const ALL_TYPES: ActivityType[] = ['kegel', 'warmup', 'strength', 'run']
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -101,26 +102,27 @@ export default function Dashboard() {
       <RingerHint />
       <StatsHeader streak={streakDays} runsThisWeek={runsThisWeek} strengthThisWeek={strengthThisWeek} />
 
-      {/* TODAY section */}
+      {/* TODAY section — all activities always shown; today's are highlighted, the
+          rest are dimmed "optional" so you can always do extra. */}
       <div>
         <h2 className="font-semibold text-text mb-3">TODAY</h2>
         <div className="space-y-3">
-          {todayActivities.length === 0 && (
-            <p className="text-text-dim text-sm">Rest day — nothing scheduled.</p>
-          )}
-          {todayActivities.map(type => {
-            const meta = getActivityMeta(type)
-            return (
-              <ActivityCard
-                key={type}
-                icon={meta.icon}
-                label={meta.label}
-                subtitle={meta.subtitle}
-                done={isDoneToday(type)}
-                onStart={() => navigate(meta.route)}
-              />
-            )
-          })}
+          {[...ALL_TYPES]
+            .sort((a, b) => Number(todayActivities.includes(b)) - Number(todayActivities.includes(a)))
+            .map(type => {
+              const meta = getActivityMeta(type)
+              return (
+                <ActivityCard
+                  key={type}
+                  icon={meta.icon}
+                  label={meta.label}
+                  subtitle={meta.subtitle}
+                  scheduled={todayActivities.includes(type)}
+                  done={isDoneToday(type)}
+                  onStart={() => navigate(meta.route)}
+                />
+              )
+            })}
         </div>
       </div>
 
