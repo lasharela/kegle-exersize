@@ -8,6 +8,11 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
+      // Self-destroying SW: unregisters any previously-installed service worker and
+      // stops caching. The app stays installable (manifest below) and standalone,
+      // but always loads fresh from the network — ending the stale-cache problems
+      // (frozen media, stale JS) that plagued the iOS standalone PWA.
+      selfDestroying: true,
       registerType: 'autoUpdate',
       includeAssets: ['icon-192.png', 'icon-512.png'],
       manifest: {
