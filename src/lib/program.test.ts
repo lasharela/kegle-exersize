@@ -11,7 +11,7 @@ describe('program config', () => {
   })
   it('has all 7 strength exercises in English with sets/reps/ramp', () => {
     const keys = STRENGTH_CIRCUIT.map((e) => e.key)
-    expect(keys).toEqual(['swing','upright_row','goblet_squat','lunge','overhead_press','pushup','bent_row'])
+    expect(keys).toEqual(['swing','upright_row','goblet_squat','lunge','overhead_press','pushup','bent_row','glute_bridge'])
     expect(STRENGTH_CIRCUIT[0].sets).toBe(3)
     expect(STRENGTH_CIRCUIT[0].startReps).toBe(15)
     expect(STRENGTH_CIRCUIT.find((e) => e.key === 'pushup')!.startReps).toBe(5)

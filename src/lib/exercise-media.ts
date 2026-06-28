@@ -12,6 +12,7 @@ const GIF_KEYS = new Set([
   'overhead_press',
   'pushup',
   'bent_over_row',
+  'glute_bridge',
   // warm-up
   'world_greatest_stretch',
   'band_reverse_fly',
