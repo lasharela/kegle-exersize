@@ -147,17 +147,14 @@ export default function Warmup() {
         Move {moveIndex + 1} of {WARMUP.length}
       </p>
 
-      {/* Exercise image */}
-      <div className="w-full aspect-video rounded-2xl overflow-hidden bg-surface border border-border">
-        <img
-          src={mediaUrl(move.mediaKey)}
-          alt={move.name}
-          onError={(e) => {
-            ;(e.target as HTMLImageElement).src = '/icon-192.png'
-          }}
-          className="w-full h-full object-cover"
-        />
-      </div>
+      {/* Exercise image — contain (no crop) + height cap, like the strength card */}
+      <img
+        src={mediaUrl(move.mediaKey)}
+        alt={move.name}
+        onError={(e) => { e.currentTarget.src = '/icon-192.png' }}
+        className="w-full rounded-2xl object-contain bg-surface border border-border"
+        style={{ maxHeight: '40vh' }}
+      />
 
       {/* Move name */}
       <h2 className="text-text font-bold text-xl text-center">{move.name}</h2>
