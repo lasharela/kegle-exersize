@@ -20,6 +20,7 @@ export interface Profile {
   unlockedBadges: string[]
   weekStartDate: string
   totalPulses: number
+  trainingState?: string
 }
 
 export interface Exercise {
