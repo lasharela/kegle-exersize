@@ -22,12 +22,14 @@ export const STRENGTH_CIRCUIT: StrengthExercise[] = [
   { key: 'bent_row',      name: 'Bent-over row',    mediaKey: 'bent_over_row',    sets: 1, startReps: 12, perSide: true,  rampStep: 2, restSec: R },
 ]
 
+// Animated warm-up (same GIF style as the strength circuit). Mobility -> activation
+// -> light cardio; uses the TRX band and includes glute/pelvic activation.
 export const WARMUP: WarmupMove[] = [
-  { key: 'arm_circles', name: 'Arm circles',       mediaKey: 'arm_circles',      durationSec: 30 },
-  { key: 'band_pulls',  name: 'Band pull-aparts',  mediaKey: 'band_pull_apart',  durationSec: 40 },
-  { key: 'bw_squats',   name: 'Bodyweight squats', mediaKey: 'bodyweight_squat', durationSec: 40 },
-  { key: 'hip_openers', name: 'Hip openers',       mediaKey: 'hip_circle',       durationSec: 40 },
-  { key: 'kb_halos',    name: 'Kettlebell halos',  mediaKey: 'kettlebell_halo',  durationSec: 40 },
+  { key: 'wgs',         name: "World's greatest stretch", mediaKey: 'world_greatest_stretch', durationSec: 40 },
+  { key: 'band_fly',    name: 'Band reverse fly',         mediaKey: 'band_reverse_fly',       durationSec: 40 },
+  { key: 'glute_march', name: 'Glute bridge march',       mediaKey: 'glute_bridge_march',     durationSec: 40 },
+  { key: 'inchworm',    name: 'Inchworm',                 mediaKey: 'inchworm',               durationSec: 40 },
+  { key: 'mtn_climber', name: 'Mountain climber',         mediaKey: 'mountain_climber',       durationSec: 30 },
 ]
 
 export const WEEKLY_SCHEDULE: Record<Weekday, ActivityType[]> = {
