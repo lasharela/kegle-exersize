@@ -5,10 +5,13 @@ import { useAuth } from '../context/AuthContext'
 import { useLeveling } from '../hooks/useLeveling'
 import { databases, DATABASE_ID, EXERCISES_COLLECTION } from '../lib/appwrite'
 import { BADGES, evaluateBadges } from '../lib/badges'
-import { daysCompletedThisLevel, canLevelUp, DAYS_TO_LEVEL_UP } from '../lib/progression'
+import { daysCompletedThisLevel, canLevelUp, DAYS_TO_LEVEL_UP, consistentSessions } from '../lib/progression'
 import { levelNumber, nextTarget, prevTarget } from '../lib/levels'
 import { soundEnabled, setSoundEnabled, hapticsEnabled, setHapticsEnabled } from '../lib/settings'
-import type { Exercise } from '../lib/types'
+import { parseTrainingState } from '../lib/training-state'
+import { STRENGTH_CIRCUIT, PROGRESSION } from '../lib/program'
+import { listActivityLogs } from '../lib/activity-log'
+import type { Exercise, ActivityLog } from '../lib/types'
 import WeekCalendar from '../components/WeekCalendar'
 import HistoryGrid from '../components/HistoryGrid'
 import BadgeCard from '../components/BadgeCard'
@@ -17,6 +20,7 @@ export default function Settings() {
   const { profile, updateProfile, logout } = useAuth()
   const { levelUp, levelDown } = useLeveling(profile, updateProfile)
   const [exercises, setExercises] = useState<Exercise[]>([])
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([])
   const [pulseInterval, setPulseInterval] = useState(profile?.pulseInterval ?? 1.5)
   const [saving, setSaving] = useState(false)
   const [loadingExercises, setLoadingExercises] = useState(true)
@@ -45,6 +49,11 @@ export default function Settings() {
       .catch(console.error)
       .finally(() => setLoadingExercises(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.userId])
+
+  useEffect(() => {
+    if (!profile?.userId) return
+    listActivityLogs(profile.userId).then(setActivityLogs).catch(console.error)
   }, [profile?.userId])
 
   const checkBadges = async (exs: Exercise[]) => {
@@ -86,11 +95,18 @@ export default function Settings() {
     )
   }
 
+  const d = new Date()
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
   const level = levelNumber(profile.currentTarget)
   const up = nextTarget(profile.currentTarget)
   const down = prevTarget(profile.currentTarget)
   const daysDone = daysCompletedThisLevel(exercises, profile)
   const canUp = canLevelUp(exercises, profile)
+
+  const trainingState = parseTrainingState(profile, today)
+  const strengthSessions = Math.min(consistentSessions(activityLogs, { type: 'strength', sinceISO: trainingState.levelStart.strength }), PROGRESSION.sessionsToRamp)
+  const runSessions = Math.min(consistentSessions(activityLogs, { type: 'run', sinceISO: trainingState.levelStart.run }), PROGRESSION.sessionsToRamp)
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
@@ -161,6 +177,35 @@ export default function Settings() {
         ) : (
           <p className="text-text-dim text-xs">Top level reached 🏆</p>
         )}
+      </div>
+
+      {/* Training */}
+      <div>
+        <h2 className="font-semibold mb-3">Training</h2>
+        <div className="bg-surface rounded-xl p-4 space-y-3">
+          <div className="flex justify-between text-sm">
+            <span className="text-text-dim">Run target</span>
+            <span className="font-semibold">{trainingState.runMinutes} min</span>
+          </div>
+          <div className="h-px bg-border" />
+          {STRENGTH_CIRCUIT.map((ex) => (
+            <div key={ex.key} className="flex justify-between text-sm">
+              <span className="text-text-dim">{ex.name}</span>
+              <span className="font-semibold">
+                {trainingState.strength[ex.key]}{ex.perSide ? ' / side' : ' reps'}
+              </span>
+            </div>
+          ))}
+          <div className="h-px bg-border" />
+          <div className="flex justify-between text-xs text-text-dim">
+            <span>Strength sessions this level</span>
+            <span>{strengthSessions}/{PROGRESSION.sessionsToRamp}</span>
+          </div>
+          <div className="flex justify-between text-xs text-text-dim">
+            <span>Run sessions this level</span>
+            <span>{runSessions}/{PROGRESSION.sessionsToRamp}</span>
+          </div>
+        </div>
       </div>
 
       {/* This Week */}

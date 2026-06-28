@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react'
 import { ID, Query, Permission, Role, type Models } from 'appwrite'
 import { account, databases, DATABASE_ID, PROFILES_COLLECTION, EXERCISES_COLLECTION } from '../lib/appwrite'
+import { defaultTrainingState } from '../lib/training-state'
 import type { Profile, Exercise } from '../lib/types'
 
 interface AuthState {
@@ -144,6 +145,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.$id, profile?.currentTarget])
+
+  // One-time seeding of training state for accounts that pre-date the training program.
+  // Guarded by profile.trainingState being absent AND a localStorage flag to prevent loops.
+  useEffect(() => {
+    if (!profile) return
+    if (profile.trainingState) return
+    if (localStorage.getItem('kegle.trainingSeeded')) return
+    localStorage.setItem('kegle.trainingSeeded', '1')
+    const d = new Date()
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    updateProfile({ trainingState: JSON.stringify(defaultTrainingState(today)) }).catch(console.error)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.$id, profile?.trainingState])
 
   return (
     <AuthContext.Provider value={{ user, profile, streakDays, loading, login, register, logout, refreshProfile, updateProfile }}>
