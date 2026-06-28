@@ -11,6 +11,7 @@ import type { ActivityType } from '../lib/program'
 import type { ActivityLog, Exercise } from '../lib/types'
 import StatsHeader from '../components/StatsHeader'
 import ActivityCard from '../components/ActivityCard'
+import RingerHint from '../components/RingerHint'
 
 type ActivityMeta = { icon: string; label: string; subtitle: string; route: string }
 
@@ -86,6 +87,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+      <RingerHint />
       <StatsHeader streak={streakDays} runsThisWeek={runsThisWeek} strengthThisWeek={strengthThisWeek} />
 
       {/* TODAY section */}

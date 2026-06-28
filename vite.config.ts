@@ -11,9 +11,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon-192.png', 'icon-512.png'],
       manifest: {
-        name: 'Kegel Exercise',
-        short_name: 'Kegel',
-        description: 'Daily kegel exercise trainer with progressive difficulty',
+        name: 'Daily Fitness',
+        short_name: 'Fitness',
+        description: 'Daily fitness: kegel, strength, warm-up and running',
         theme_color: '#0f0f0f',
         background_color: '#0f0f0f',
         display: 'standalone',
