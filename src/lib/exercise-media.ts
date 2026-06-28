@@ -25,7 +25,22 @@ const ID_MAP: Record<string, string> = {
 
 const FALLBACK = '/icon-192.png'
 
+// Bundled animated GIFs (consistent ExerciseDB-style figure) for the strength
+// moves — stored in public/exercises/. Non-commercial dataset; fine for personal
+// use. Warm-up/mobility moves have no animated match and fall back to the static
+// free-exercise-db image below.
+const GIF_KEYS = new Set([
+  'kettlebell_swing',
+  'upright_row',
+  'goblet_squat',
+  'lunge',
+  'overhead_press',
+  'pushup',
+  'bent_over_row',
+])
+
 export function mediaUrl(mediaKey: string): string {
+  if (GIF_KEYS.has(mediaKey)) return `/exercises/${mediaKey}.gif`
   const id = ID_MAP[mediaKey]
   return id ? `${BASE}/${id}/0.jpg` : FALLBACK
 }
