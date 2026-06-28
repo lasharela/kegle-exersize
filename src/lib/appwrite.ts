@@ -10,3 +10,4 @@ export const databases = new Databases(client)
 export const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE
 export const PROFILES_COLLECTION = import.meta.env.VITE_APPWRITE_PROFILES_COLLECTION
 export const EXERCISES_COLLECTION = import.meta.env.VITE_APPWRITE_EXERCISES_COLLECTION
+export const ACTIVITYLOGS_COLLECTION = import.meta.env.VITE_APPWRITE_ACTIVITYLOGS_COLLECTION

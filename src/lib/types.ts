@@ -1,3 +1,10 @@
+import type { ActivityType } from './program'
+
+export interface ActivityLog {
+  $id: string; userId: string; date: string; type: ActivityType
+  completed: boolean; durationSec: number; payload?: string
+}
+
 export interface Profile {
   $id: string
   userId: string
@@ -13,6 +20,7 @@ export interface Profile {
   unlockedBadges: string[]
   weekStartDate: string
   totalPulses: number
+  trainingState?: string
 }
 
 export interface Exercise {
