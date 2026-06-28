@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { daysCompletedThisLevel, canLevelUp, DAYS_TO_LEVEL_UP } from './progression'
-import type { Exercise, Profile } from './types'
+import { daysCompletedThisLevel, canLevelUp, DAYS_TO_LEVEL_UP, consistentSessions, shouldRamp } from './progression'
+import type { Exercise, Profile, ActivityLog } from './types'
 
 function profile(over: Partial<Profile> = {}): Profile {
   return {
@@ -66,5 +66,61 @@ describe('canLevelUp', () => {
     const days = ['02', '03', '04', '05', '06', '07', '08']
     const exercises = days.map((d) => ex({ date: `2026-06-${d}`, targetPulses: 2000, pulsesCompleted: 2000 }))
     expect(canLevelUp(exercises, p)).toBe(false)
+  })
+})
+
+function log(over: Partial<ActivityLog>): ActivityLog {
+  return {
+    $id: 'l', userId: 'u', date: '2026-06-10', type: 'strength',
+    completed: true, durationSec: 60, ...over,
+  }
+}
+
+describe('consistentSessions', () => {
+  it('counts distinct completed days for the given type since sinceISO', () => {
+    const logs = [
+      log({ date: '2026-06-10', type: 'strength' }),
+      log({ date: '2026-06-11', type: 'strength' }),
+      log({ date: '2026-06-11', type: 'strength' }), // duplicate day -> counts once
+    ]
+    expect(consistentSessions(logs, { type: 'strength', sinceISO: '2026-06-01' })).toBe(2)
+  })
+
+  it('ignores logs of other activity types', () => {
+    const logs = [
+      log({ date: '2026-06-10', type: 'run' }),
+      log({ date: '2026-06-11', type: 'strength' }),
+    ]
+    expect(consistentSessions(logs, { type: 'strength', sinceISO: '2026-06-01' })).toBe(1)
+  })
+
+  it('ignores incomplete logs', () => {
+    const logs = [
+      log({ date: '2026-06-10', type: 'strength', completed: false }),
+      log({ date: '2026-06-11', type: 'strength', completed: true }),
+    ]
+    expect(consistentSessions(logs, { type: 'strength', sinceISO: '2026-06-01' })).toBe(1)
+  })
+
+  it('ignores logs with dates before sinceISO', () => {
+    const logs = [
+      log({ date: '2026-05-30', type: 'strength' }),
+      log({ date: '2026-06-10', type: 'strength' }),
+    ]
+    expect(consistentSessions(logs, { type: 'strength', sinceISO: '2026-06-01' })).toBe(1)
+  })
+})
+
+describe('shouldRamp', () => {
+  it('returns true when 7 distinct completed days are reached', () => {
+    const days = ['01', '02', '03', '04', '05', '06', '07']
+    const logs = days.map((d) => log({ date: `2026-06-${d}`, type: 'strength' }))
+    expect(shouldRamp(logs, { type: 'strength', sinceISO: '2026-06-01' })).toBe(true)
+  })
+
+  it('returns false with only 6 distinct completed days', () => {
+    const days = ['01', '02', '03', '04', '05', '06']
+    const logs = days.map((d) => log({ date: `2026-06-${d}`, type: 'strength' }))
+    expect(shouldRamp(logs, { type: 'strength', sinceISO: '2026-06-01' })).toBe(false)
   })
 })
