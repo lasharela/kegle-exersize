@@ -52,6 +52,11 @@ export default function Strength() {
   const elapsedRef = useRef(0)
   elapsedRef.current = elapsed
 
+  // True once the current rest's countdown has actually ticked. Prevents the
+  // auto-advance effect from firing on the rest-entry render (where
+  // restRemaining is still the stale 0 from the previous rest / initial state).
+  const restTickedRef = useRef(false)
+
   // Derived: is the rest countdown timer active?
   const isRestActive = phase === 'running' && step?.kind === 'rest'
 
@@ -59,15 +64,20 @@ export default function Strength() {
   useEffect(() => {
     if (phase !== 'running' || step?.kind !== 'rest') return
     setRestRemaining(step.restSec)
+    restTickedRef.current = false // not yet ticked — block auto-advance on entry
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, phase])
 
-  // Tick the rest countdown
-  useTimer(() => setRestRemaining((r) => Math.max(0, r - 1)), 1000, isRestActive)
+  // Tick the rest countdown (mark that ticking has begun so 0 means "ran out")
+  useTimer(() => {
+    restTickedRef.current = true
+    setRestRemaining((r) => Math.max(0, r - 1))
+  }, 1000, isRestActive)
 
-  // Auto-advance when rest runs out
+  // Auto-advance when rest runs out — only after the countdown has actually
+  // ticked, never on the entry render where restRemaining is still stale (0).
   useEffect(() => {
-    if (!isRestActive || restRemaining > 0) return
+    if (!isRestActive || restRemaining > 0 || !restTickedRef.current) return
     breakSound()
     breakBuzz()
     next()
