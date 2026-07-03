@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { activitiesForDate, weeklyProgress, weekStartISO } from './schedule'
+import type { ActivityLog } from './types'
 
 describe('activitiesForDate', () => {
   it('returns the weekday activities (2026-06-30 is a Tuesday)', () => {
@@ -17,7 +18,7 @@ describe('weekStartISO', () => {
 describe('weeklyProgress', () => {
   it('counts distinct completed activity-days scheduled this week', () => {
     const r = weeklyProgress({
-      logs: [{ date: '2026-06-30', type: 'strength', completed: true } as any],
+      logs: [{ $id: '1', userId: 'u', date: '2026-06-30', type: 'strength', completed: true, durationSec: 0 } satisfies ActivityLog],
       kegelDates: ['2026-06-29', '2026-06-30'],
       weekStart: '2026-06-29', today: '2026-06-30',
     })

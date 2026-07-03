@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState } from 'react'
 
 export function useTimer(onTick: () => void, intervalMs: number, active: boolean) {
   const tickRef = useRef(onTick)
-  tickRef.current = onTick
+  useEffect(() => { tickRef.current = onTick })
 
   const intervalRef = useRef<number | null>(null)
 

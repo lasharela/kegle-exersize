@@ -9,7 +9,7 @@ import { daysCompletedThisLevel, canLevelUp, DAYS_TO_LEVEL_UP, consistentSession
 import { levelNumber, nextTarget, prevTarget } from '../lib/levels'
 import { soundEnabled, setSoundEnabled, hapticsEnabled, setHapticsEnabled } from '../lib/settings'
 import { parseTrainingState } from '../lib/training-state'
-import { STRENGTH_CIRCUIT, PROGRESSION } from '../lib/program'
+import { STRENGTH_CIRCUIT, PROGRESSION, SHIELDS } from '../lib/program'
 import { localDateISO } from '../lib/date'
 import { listActivityLogs } from '../lib/activity-log'
 import type { Exercise, ActivityLog } from '../lib/types'
@@ -18,7 +18,7 @@ import HistoryGrid from '../components/HistoryGrid'
 import BadgeCard from '../components/BadgeCard'
 
 export default function Settings() {
-  const { profile, updateProfile, logout } = useAuth()
+  const { profile, user, updateProfile, buyShield, logout } = useAuth()
   const { levelUp, levelDown } = useLeveling(profile, updateProfile)
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([])
@@ -73,13 +73,6 @@ export default function Settings() {
     setSaving(false)
   }
 
-  const handleBuyShield = async () => {
-    if (!profile || profile.totalPoints < 25 || profile.shieldsOwned >= 2) return
-    await updateProfile({
-      totalPoints: profile.totalPoints - 25,
-      shieldsOwned: profile.shieldsOwned + 1,
-    })
-  }
 
   if (!profile) {
     return (
@@ -238,19 +231,23 @@ export default function Settings() {
 
       {/* Shields */}
       <div>
-        <h2 className="font-semibold mb-3">Shields</h2>
+        <h2 className="font-semibold mb-3">Streak Shields</h2>
         <div className="bg-surface rounded-xl p-4">
-          <p className="text-sm">Owned: <span className="text-blue font-bold">{profile.shieldsOwned}</span> / 2</p>
-          <p className="text-text-dim text-xs mt-1">Protects a missed day from breaking your streak</p>
+          <p className="text-sm">Owned: <span className="text-blue font-bold">{profile.shieldsOwned}</span> / {SHIELDS.max}</p>
+          <p className="text-text-dim text-xs mt-1">Auto-covers a missed day so it doesn't break your streak</p>
           <button
-            onClick={handleBuyShield}
-            disabled={profile.totalPoints < 25 || profile.shieldsOwned >= 2}
+            onClick={buyShield}
+            disabled={profile.totalPoints < SHIELDS.cost || profile.shieldsOwned >= SHIELDS.max}
             className="w-full bg-blue text-white rounded-xl py-3 mt-3 disabled:opacity-40 active:scale-95 transition-transform flex items-center justify-center gap-2"
           >
             <Shield size={18} />
             <span className="font-semibold text-sm">Buy Shield</span>
           </button>
-          <p className="text-text-dim text-xs mt-1 text-center">25 points</p>
+          <p className="text-text-dim text-xs mt-1 text-center">
+            {SHIELDS.cost} points
+            {profile.totalPoints < SHIELDS.cost && ` — you have ${profile.totalPoints}`}
+            {profile.shieldsOwned >= SHIELDS.max && ' — max shields held'}
+          </p>
         </div>
       </div>
 
@@ -310,6 +307,15 @@ export default function Settings() {
               unlocked={profile.unlockedBadges.includes(badge.id)}
             />
           ))}
+        </div>
+      </div>
+
+      {/* Account */}
+      <div>
+        <h2 className="font-semibold mb-3">Account</h2>
+        <div className="bg-surface rounded-xl p-4">
+          <p className="text-text-dim text-xs">Account ID (for the Apple Health walk Shortcut)</p>
+          <p className="text-sm font-mono break-all select-all mt-1">{user?.$id}</p>
         </div>
       </div>
 

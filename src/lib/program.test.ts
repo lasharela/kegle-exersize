@@ -15,7 +15,7 @@ describe('program config', () => {
     expect(STRENGTH_CIRCUIT[0].sets).toBe(3)
     expect(STRENGTH_CIRCUIT[0].startReps).toBe(15)
     expect(STRENGTH_CIRCUIT.find((e) => e.key === 'pushup')!.startReps).toBe(5)
-    STRENGTH_CIRCUIT.forEach((e) => { expect(e.rampStep).toBeGreaterThan(0); expect(e.name).toMatch(/^[\x00-\x7F]+$/) })
+    STRENGTH_CIRCUIT.forEach((e) => { expect(e.rampStep).toBeGreaterThan(0); expect(e.name).toMatch(/^[ -~]+$/) })
   })
   it('exposes warmup moves, running defaults and a 7-session ramp gate', () => {
     expect(WARMUP.length).toBeGreaterThanOrEqual(4)

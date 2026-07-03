@@ -2,6 +2,7 @@
 // register a guard while running; Header (and any exit path) routes through
 // requestExit, which shows a confirm sheet instead of silently abandoning the
 // session. The iOS swipe-back gesture is intercepted via a history sentinel.
+/* eslint-disable react-refresh/only-export-components -- idiomatic context module: provider + hooks */
 import { createContext, useContext, useEffect, useRef, useState, useCallback, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -101,7 +102,7 @@ export function useSessionGuardContext(): SessionGuardState {
 export function useSessionGuard(active: boolean, onExit: Guard['onExit']) {
   const { registerGuard } = useSessionGuardContext()
   const onExitRef = useRef(onExit)
-  onExitRef.current = onExit
+  useEffect(() => { onExitRef.current = onExit })
 
   useEffect(() => {
     if (!active) return

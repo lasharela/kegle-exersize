@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildSteps } from './useCircuit'
+import { buildSteps, type Step } from './useCircuit'
 import { STRENGTH_CIRCUIT } from '../lib/program'
 
 describe('buildSteps', () => {
@@ -15,9 +15,9 @@ describe('buildSteps', () => {
   })
   it('uses reps from the map, falling back to startReps', () => {
     const steps = buildSteps(STRENGTH_CIRCUIT, { swing: 30 })
-    const firstSwing = steps.find((s) => s.kind === 'exercise' && s.exercise.key === 'swing') as any
+    const firstSwing = steps.find((s) => s.kind === 'exercise' && s.exercise.key === 'swing') as Extract<Step, { kind: 'exercise' }>
     expect(firstSwing.reps).toBe(30)
-    const pushup = steps.find((s) => s.kind === 'exercise' && s.exercise.key === 'pushup') as any
+    const pushup = steps.find((s) => s.kind === 'exercise' && s.exercise.key === 'pushup') as Extract<Step, { kind: 'exercise' }>
     expect(pushup.reps).toBe(5) // falls back to startReps
   })
 })

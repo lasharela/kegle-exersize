@@ -34,7 +34,7 @@ export default function Warmup() {
     if (phase !== 'running') return
     setRemaining(WARMUP[moveIndex].durationSec)
     tickedRef.current = false
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [moveIndex, phase])
 
   // ── Timer tick ────────────────────────────────────────────────────────────

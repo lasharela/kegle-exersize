@@ -9,6 +9,7 @@ import Exercise from './pages/Exercise'
 import Warmup from './pages/Warmup'
 import Strength from './pages/Strength'
 import Run from './pages/Run'
+import Weight from './pages/Weight'
 import Settings from './pages/Settings'
 
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="/warmup" element={<Protected><Warmup /></Protected>} />
         <Route path="/strength" element={<Protected><Strength /></Protected>} />
         <Route path="/run" element={<Protected><Run /></Protected>} />
+        <Route path="/weight" element={<Protected><Weight /></Protected>} />
         <Route path="/settings" element={<Protected><Settings /></Protected>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

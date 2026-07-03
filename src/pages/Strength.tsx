@@ -61,7 +61,7 @@ export default function Strength() {
     if (phase !== 'running' || step?.kind !== 'rest') return
     setRestRemaining(step.restSec)
     restTickedRef.current = false // not yet ticked — block auto-advance on entry
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [step, phase])
 
   // Tick the rest countdown (mark that ticking has begun so 0 means "ran out")

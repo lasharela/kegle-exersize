@@ -10,7 +10,9 @@ import { databases, DATABASE_ID, EXERCISES_COLLECTION } from '../lib/appwrite'
 import type { ActivityType } from '../lib/program'
 import { STRENGTH_CIRCUIT } from '../lib/program'
 import { localDateISO } from '../lib/date'
-import type { ActivityLog, Exercise } from '../lib/types'
+import { listWeights } from '../lib/weight-log'
+import { WEIGHT } from '../lib/program'
+import type { ActivityLog, Exercise, WeightLog } from '../lib/types'
 import StatsHeader from '../components/StatsHeader'
 import ActivityCard from '../components/ActivityCard'
 import RingerHint from '../components/RingerHint'
@@ -25,10 +27,11 @@ const ALL_TYPES: ScheduledActivity[] = ['kegel', 'warmup', 'strength', 'run']
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { profile, streakDays } = useAuth()
+  const { profile, streakDays, shieldSavedDates } = useAuth()
 
   const [logs, setLogs] = useState<ActivityLog[]>([])
   const [kegelDates, setKegelDates] = useState<Set<string>>(new Set())
+  const [latestWeight, setLatestWeight] = useState<WeightLog | null>(null)
 
   const today = localDateISO()
 
@@ -44,13 +47,17 @@ export default function Dashboard() {
         Query.orderDesc('date'),
         Query.limit(100),
       ]),
-    ]).then(([logsResult, exercisesResult]) => {
+      listWeights(userId, 1),
+    ]).then(([logsResult, exercisesResult, weightResult]) => {
       if (logsResult.status === 'fulfilled') {
         setLogs(logsResult.value)
       }
       if (exercisesResult.status === 'fulfilled') {
         const docs = exercisesResult.value.documents as unknown as Exercise[]
         setKegelDates(new Set(docs.filter(e => e.completed).map(e => e.date)))
+      }
+      if (weightResult.status === 'fulfilled' && weightResult.value.length > 0) {
+        setLatestWeight(weightResult.value[0])
       }
     })
   }, [profile?.userId])
@@ -99,10 +106,46 @@ export default function Dashboard() {
     }
   }
 
+  // Latest walk ingested from Apple Health (informational, not scheduled).
+  const latestWalk = logs.find(l => l.type === 'walk')
+  const walkSteps = (() => {
+    if (!latestWalk?.payload) return null
+    try { return (JSON.parse(latestWalk.payload) as { steps?: number }).steps ?? null } catch { return null }
+  })()
+
+  const fmtBannerDate = (iso: string) =>
+    new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+
   return (
     <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
       <RingerHint />
-      <StatsHeader streak={streakDays} runsThisWeek={runsThisWeek} strengthThisWeek={strengthThisWeek} />
+
+      {shieldSavedDates.length > 0 && (
+        <div className="bg-surface border border-blue/40 rounded-xl px-4 py-3 text-sm">
+          🛡 A shield saved your streak ({shieldSavedDates.map(fmtBannerDate).join(', ')})
+        </div>
+      )}
+
+      <StatsHeader streak={streakDays} shields={profile.shieldsOwned} runsThisWeek={runsThisWeek} strengthThisWeek={strengthThisWeek} />
+
+      {/* Weight + walk row */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() => navigate('/weight')}
+          className="bg-surface rounded-xl border border-border px-3 py-3 flex flex-col items-center active:scale-95 transition-transform"
+        >
+          <span className="text-lg">⚖️ {latestWeight ? `${latestWeight.kg.toFixed(1)} kg` : '— kg'}</span>
+          <span className="text-xs text-text-dim mt-1">
+            {latestWeight ? `${(latestWeight.kg - WEIGHT.goalKg).toFixed(1)} to goal` : 'log weight'}
+          </span>
+        </button>
+        <div className="bg-surface rounded-xl border border-border px-3 py-3 flex flex-col items-center">
+          <span className="text-lg">🚶 {walkSteps != null ? walkSteps.toLocaleString() : '—'}</span>
+          <span className="text-xs text-text-dim mt-1">
+            {latestWalk ? `steps · ${fmtBannerDate(latestWalk.date)}` : 'steps (via Shortcut)'}
+          </span>
+        </div>
+      </div>
 
       {/* TODAY section — all activities always shown; today's are highlighted, the
           rest are dimmed "optional" so you can always do extra. */}

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- idiomatic context module: provider + hook */
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react'
 import { ID, Query, Permission, Role, type Models } from 'appwrite'
 import { account, databases, DATABASE_ID, PROFILES_COLLECTION, EXERCISES_COLLECTION } from '../lib/appwrite'
