@@ -4,5 +4,11 @@
   "assets": {
     "directory": "./dist",
     "not_found_handling": "single-page-application"
-  }
+  },
+  // Custom domains (Cloudflare zone lasharela.com). kegel.lasharela.com is the
+  // legacy install URL — keep it so existing PWA installs don't break.
+  "routes": [
+    { "pattern": "fitness.lasharela.com", "custom_domain": true },
+    { "pattern": "kegel.lasharela.com", "custom_domain": true }
+  ]
 }
