@@ -45,7 +45,7 @@ export default function Login() {
   return (
     <div className="flex flex-col items-center justify-center h-full px-6">
       <div className="w-full max-w-sm">
-        <h1 className="text-3xl font-bold text-center mb-2 text-primary">Kegel</h1>
+        <h1 className="text-3xl font-bold text-center mb-2 text-primary">Daily Fitness</h1>
         <p className="text-text-dim text-center mb-8 text-sm">
           {isRegister ? 'Create your account' : 'Welcome back'}
         </p>
