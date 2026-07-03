@@ -2,6 +2,9 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 import { ID, Query, Permission, Role, type Models } from 'appwrite'
 import { account, databases, DATABASE_ID, PROFILES_COLLECTION, EXERCISES_COLLECTION } from '../lib/appwrite'
 import { defaultTrainingState } from '../lib/training-state'
+import { computeStreak } from '../lib/streak'
+import { listActivityLogs } from '../lib/activity-log'
+import { SHIELDS } from '../lib/program'
 import type { Profile, Exercise } from '../lib/types'
 import { localDateISO } from '../lib/date'
 
@@ -9,12 +12,14 @@ interface AuthState {
   user: Models.User<Models.Preferences> | null
   profile: Profile | null
   streakDays: number
+  shieldSavedDates: string[]
   loading: boolean
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, name: string, initials: string) => Promise<void>
   logout: () => Promise<void>
   refreshProfile: () => Promise<void>
   updateProfile: (data: Partial<Profile>) => Promise<void>
+  buyShield: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthState | null>(null)
@@ -23,43 +28,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [streakDays, setStreakDays] = useState(0)
+  const [shieldSavedDates, setShieldSavedDates] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
-  const fetchStreak = useCallback(async (userId: string) => {
-    try {
-      const res = await databases.listDocuments(DATABASE_ID, EXERCISES_COLLECTION, [
-        Query.equal('userId', userId),
-        Query.equal('completed', true),
-        Query.orderDesc('date'),
-        Query.limit(100),
-      ])
-      const dates = new Set((res.documents as unknown as Exercise[]).map((e) => e.date))
-      const today = new Date().toISOString().split('T')[0]
-      if (!dates.has(today)) { setStreakDays(0); return }
-      let streak = 1
-      const d = new Date()
-      while (true) {
-        d.setDate(d.getDate() - 1)
-        if (dates.has(d.toISOString().split('T')[0])) streak++
-        else break
-      }
-      setStreakDays(streak)
-    } catch {
-      setStreakDays(0)
-    }
-  }, [])
-
-  const fetchProfile = useCallback(async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
     try {
       const res = await databases.listDocuments(DATABASE_ID, PROFILES_COLLECTION, [
         Query.equal('userId', userId),
         Query.limit(1),
       ])
       if (res.documents.length > 0) {
-        setProfile(res.documents[0] as unknown as Profile)
+        const p = res.documents[0] as unknown as Profile
+        setProfile(p)
+        return p
       }
     } catch (e) {
       console.error('Failed to fetch profile:', e)
+    }
+    return null
+  }, [])
+
+  // All-activity streak: every scheduled activity done each day (kegel-only
+  // before STREAK_EPOCH), with shields auto-consumed to cover missed days.
+  const fetchStreak = useCallback(async (userId: string, p: Profile | null) => {
+    try {
+      const [kegelRes, logs] = await Promise.all([
+        databases.listDocuments(DATABASE_ID, EXERCISES_COLLECTION, [
+          Query.equal('userId', userId),
+          Query.equal('completed', true),
+          Query.orderDesc('date'),
+          Query.limit(100),
+        ]),
+        listActivityLogs(userId, 400),
+      ])
+      const kegelDates = new Set((kegelRes.documents as unknown as Exercise[]).map((e) => e.date))
+      const { streak, consume } = computeStreak({
+        kegelDates,
+        logs,
+        shieldsUsed: p?.shieldsUsed ?? [],
+        shieldsOwned: p?.shieldsOwned ?? 0,
+        today: localDateISO(),
+      })
+      setStreakDays(streak)
+      if (p && consume.length > 0) {
+        const updated = {
+          shieldsOwned: p.shieldsOwned - consume.length,
+          shieldsUsed: [...p.shieldsUsed, ...consume],
+        }
+        await databases.updateDocument(DATABASE_ID, PROFILES_COLLECTION, p.$id, updated)
+        setProfile({ ...p, ...updated })
+        setShieldSavedDates(consume)
+      }
+    } catch {
+      setStreakDays(0)
     }
   }, [])
 
@@ -67,7 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     account.get()
       .then(async (u) => {
         setUser(u)
-        await Promise.all([fetchProfile(u.$id), fetchStreak(u.$id)])
+        const p = await fetchProfile(u.$id)
+        await fetchStreak(u.$id, p)
       })
       .catch(() => setUser(null))
       .finally(() => setLoading(false))
@@ -77,7 +99,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await account.createEmailPasswordSession(email, password)
     const u = await account.get()
     setUser(u)
-    await Promise.all([fetchProfile(u.$id), fetchStreak(u.$id)])
+    const p = await fetchProfile(u.$id)
+    await fetchStreak(u.$id, p)
   }
 
   const register = async (email: string, password: string, name: string, initials: string) => {
@@ -122,7 +145,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const refreshProfile = async () => {
-    if (user) await Promise.all([fetchProfile(user.$id), fetchStreak(user.$id)])
+    if (!user) return
+    const p = await fetchProfile(user.$id)
+    await fetchStreak(user.$id, p)
   }
 
   const updateProfile = async (data: Partial<Profile>) => {
@@ -131,6 +156,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void $id
     await databases.updateDocument(DATABASE_ID, PROFILES_COLLECTION, profile.$id, rest)
     await refreshProfile()
+  }
+
+  // Spend points on a streak shield (max held, cost from program config).
+  const buyShield = async () => {
+    if (!profile) return
+    if (profile.totalPoints < SHIELDS.cost || profile.shieldsOwned >= SHIELDS.max) return
+    await updateProfile({
+      totalPoints: profile.totalPoints - SHIELDS.cost,
+      shieldsOwned: profile.shieldsOwned + 1,
+    })
   }
 
   // One-time reset to the new starting level (100) for the pre-existing account.
@@ -160,7 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [profile?.$id, profile?.trainingState])
 
   return (
-    <AuthContext.Provider value={{ user, profile, streakDays, loading, login, register, logout, refreshProfile, updateProfile }}>
+    <AuthContext.Provider value={{ user, profile, streakDays, shieldSavedDates, loading, login, register, logout, refreshProfile, updateProfile, buyShield }}>
       {children}
     </AuthContext.Provider>
   )

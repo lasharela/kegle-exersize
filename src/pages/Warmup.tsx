@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useSound } from '../hooks/useSound'
 import { useTimer, useElapsed } from '../hooks/useTimer'
-import { WARMUP } from '../lib/program'
+import { WARMUP, POINTS } from '../lib/program'
 import ExerciseMedia from '../components/ExerciseMedia'
 import { logActivity } from '../lib/activity-log'
 import { squeezeBuzz, releaseBuzz, completeCelebrate } from '../lib/haptics'
@@ -11,7 +11,7 @@ import { squeezeBuzz, releaseBuzz, completeCelebrate } from '../lib/haptics'
 type Phase = 'idle' | 'running' | 'done'
 
 export default function Warmup() {
-  const { profile } = useAuth()
+  const { profile, updateProfile } = useAuth()
   const navigate = useNavigate()
   const { squeezeChime, releaseChime, completionFanfare, initAudio } = useSound()
 
@@ -64,6 +64,7 @@ export default function Warmup() {
         completed: true,
         durationSec,
       })
+      await updateProfile({ totalPoints: profile.totalPoints + (POINTS.warmup ?? 0) })
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])

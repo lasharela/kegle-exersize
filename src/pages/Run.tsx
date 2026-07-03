@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useSound } from '../hooks/useSound'
 import { useElapsed } from '../hooks/useTimer'
 import { parseTrainingState } from '../lib/training-state'
-import { RUNNING } from '../lib/program'
+import { RUNNING, POINTS } from '../lib/program'
 import { localDateISO } from '../lib/date'
 import { logActivity, listActivityLogs } from '../lib/activity-log'
 import { shouldRamp } from '../lib/progression'
@@ -54,6 +54,7 @@ export default function Run() {
     const durationSec = elapsedRef.current
     void (async () => {
       await logActivity({ userId: profile.userId, type: 'run', completed: true, durationSec })
+      await updateProfile({ totalPoints: profile.totalPoints + (POINTS.run ?? 0) })
       const logs = await listActivityLogs(profile.userId)
       if (shouldRamp(logs, { type: 'run', sinceISO: state.levelStart.run })) {
         setCanRamp(true)

@@ -5,7 +5,7 @@ import { useSound } from '../hooks/useSound'
 import { useTimer, useElapsed } from '../hooks/useTimer'
 import { buildSteps, useCircuit } from '../hooks/useCircuit'
 import { parseTrainingState } from '../lib/training-state'
-import { STRENGTH_CIRCUIT } from '../lib/program'
+import { STRENGTH_CIRCUIT, POINTS } from '../lib/program'
 import { localDateISO } from '../lib/date'
 import { logActivity, listActivityLogs } from '../lib/activity-log'
 import { shouldRamp } from '../lib/progression'
@@ -100,6 +100,7 @@ export default function Strength() {
         durationSec,
         payload: { reps: repsByKey },
       })
+      await updateProfile({ totalPoints: profile.totalPoints + (POINTS.strength ?? 0) })
       const logs = await listActivityLogs(profile.userId)
       if (shouldRamp(logs, { type: 'strength', sinceISO: state.levelStart.strength })) {
         setCanRamp(true)

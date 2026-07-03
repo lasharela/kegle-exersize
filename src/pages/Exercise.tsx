@@ -8,6 +8,7 @@ import { canLevelUp } from '../lib/progression'
 import { nextTarget, levelNumber } from '../lib/levels'
 import { pulseTap, squeezeBuzz, releaseBuzz, breakBuzz, completeCelebrate } from '../lib/haptics'
 import { isBreakPhase } from '../lib/exercise-engine'
+import { localDateISO } from '../lib/date'
 import { databases, DATABASE_ID, EXERCISES_COLLECTION } from '../lib/appwrite'
 import type { Exercise as ExerciseDoc } from '../lib/types'
 import PulseCircle from '../components/PulseCircle'
@@ -79,7 +80,7 @@ export default function Exercise() {
         ID.unique(),
         {
           userId: profile.userId,
-          date: new Date().toISOString().split('T')[0],
+          date: localDateISO(),
           completed: state.pulsesCompleted >= state.targetPulses,
           pulsesCompleted: state.pulsesCompleted,
           targetPulses: state.targetPulses,
