@@ -1,5 +1,5 @@
-import { useEffect, useState, type CSSProperties } from 'react'
-import { mediaUrl, hasVideo, imageFrames } from '../lib/exercise-media'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { mediaUrl, hasVideo, imageFrames, gifUrl, videoBlobUrl } from '../lib/exercise-media'
 
 interface Props {
   mediaKey: string
@@ -24,18 +24,40 @@ function FrameLoop({ frames, name, className, style }: { frames: [string, string
   )
 }
 
-// Renders an exercise demo as a looping muted inline <video> (reliable on iOS
-// standalone PWAs, unlike GIFs which freeze on the first frame). Exercises
-// without a video alternate two photo frames; unknown keys fall back to the icon.
-export default function ExerciseMedia({ mediaKey, name, className, style }: Props) {
-  if (!hasVideo(mediaKey)) {
-    const frames = imageFrames(mediaKey)
-    if (frames) return <FrameLoop frames={frames} name={name} className={className} style={style} />
-    return <img src={mediaUrl(mediaKey)} alt={name} className={className} style={style} />
-  }
+// Plays the demo mp4 from a blob URL (the static hosting ignores Range
+// requests, which iOS <video> needs for direct URLs). If the video errors or
+// hasn't produced a frame within the grace period, swaps to the animated GIF.
+function BlobVideo({ mediaKey, name, className, style }: Props) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [src, setSrc] = useState<string | null>(null)
+  const [useGif, setUseGif] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    videoBlobUrl(mediaKey).then((url) => {
+      if (cancelled) return
+      if (url) setSrc(url)
+      else setUseGif(true)
+    })
+    return () => { cancelled = true }
+  }, [mediaKey])
+
+  // Watchdog: no decoded frame shortly after the src is set → GIF.
+  useEffect(() => {
+    if (!src || useGif) return
+    const id = setTimeout(() => {
+      const v = videoRef.current
+      if (!v || v.readyState < 2 /* HAVE_CURRENT_DATA */) setUseGif(true)
+    }, 3000)
+    return () => clearTimeout(id)
+  }, [src, useGif])
+
+  if (useGif) return <img src={gifUrl(mediaKey)} alt={name} className={className} style={style} />
+  if (!src) return <div className={className} style={style} aria-label={name} />
   return (
     <video
-      src={mediaUrl(mediaKey)}
+      ref={videoRef}
+      src={src}
       autoPlay
       loop
       muted
@@ -43,6 +65,19 @@ export default function ExerciseMedia({ mediaKey, name, className, style }: Prop
       aria-label={name}
       className={className}
       style={style}
+      onError={() => setUseGif(true)}
     />
   )
+}
+
+// Renders an exercise demo: blob-backed looping <video> with GIF fallback for
+// program exercises, alternating photo frames for the newer moves, app icon
+// for unknown keys.
+export default function ExerciseMedia({ mediaKey, name, className, style }: Props) {
+  if (hasVideo(mediaKey)) {
+    return <BlobVideo mediaKey={mediaKey} name={name} className={className} style={style} />
+  }
+  const frames = imageFrames(mediaKey)
+  if (frames) return <FrameLoop frames={frames} name={name} className={className} style={style} />
+  return <img src={mediaUrl(mediaKey)} alt={name} className={className} style={style} />
 }

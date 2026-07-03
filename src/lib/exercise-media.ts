@@ -49,3 +49,26 @@ export function hasVideo(mediaKey: string): boolean {
 export function mediaUrl(mediaKey: string): string {
   return MEDIA_KEYS.has(mediaKey) ? `/exercises/${mediaKey}.mp4` : FALLBACK
 }
+
+// Same demo as an animated GIF — the fallback when <video> won't start
+// (Cloudflare Workers assets serve no Range support, which iOS video requires).
+export function gifUrl(mediaKey: string): string {
+  return `/exercises/${mediaKey}.gif`
+}
+
+// The static hosting ignores Range requests, so iOS refuses to stream the
+// mp4s directly. The clips are ~10 KB: fetch fully, play from a blob URL
+// (no ranges involved). Cached per key for the app's lifetime.
+const blobCache = new Map<string, Promise<string | null>>()
+
+export function videoBlobUrl(mediaKey: string): Promise<string | null> {
+  let p = blobCache.get(mediaKey)
+  if (!p) {
+    p = fetch(mediaUrl(mediaKey))
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
+      .then((b) => URL.createObjectURL(b))
+      .catch(() => null)
+    blobCache.set(mediaKey, p)
+  }
+  return p
+}
