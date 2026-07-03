@@ -17,9 +17,11 @@ import RingerHint from '../components/RingerHint'
 
 type ActivityMeta = { icon: string; label: string; subtitle: string; route: string }
 
-const ACTIVITY_ICON: Record<ActivityType, string> = { kegel: '🩺', warmup: '🔥', strength: '🏋️', run: '🏃' }
+type ScheduledActivity = Exclude<ActivityType, 'walk'>
+
+const ACTIVITY_ICON: Record<ActivityType, string> = { kegel: '🩺', warmup: '🔥', strength: '🏋️', run: '🏃', walk: '🚶' }
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const ALL_TYPES: ActivityType[] = ['kegel', 'warmup', 'strength', 'run']
+const ALL_TYPES: ScheduledActivity[] = ['kegel', 'warmup', 'strength', 'run']
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -87,7 +89,7 @@ export default function Dashboard() {
     return logs.some(l => l.type === type && l.completed && l.date === today)
   }
 
-  const getActivityMeta = (type: ActivityType): ActivityMeta => {
+  const getActivityMeta = (type: ScheduledActivity): ActivityMeta => {
     const ts = parseTrainingState(profile, today)
     switch (type) {
       case 'kegel':    return { icon: '🩺', label: 'Kegel',    subtitle: `Level ${levelNumber(profile.currentTarget)} · ${profile.currentTarget} pulses`, route: '/kegel' }

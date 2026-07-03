@@ -1,5 +1,6 @@
 export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6 // 0 = Sunday (JS getDay)
-export type ActivityType = 'kegel' | 'warmup' | 'strength' | 'run'
+// 'walk' is ingested from Apple Health via the Shortcuts bridge — never scheduled.
+export type ActivityType = 'kegel' | 'warmup' | 'strength' | 'run' | 'walk'
 
 export interface StrengthExercise {
   key: string; name: string; mediaKey: string
@@ -10,6 +11,16 @@ export interface WarmupMove { key: string; name: string; mediaKey: string; durat
 
 export const PROGRESSION = { sessionsToRamp: 7, defaultRestSec: 120 }
 export const RUNNING = { startMinutes: 20, rampStepMinutes: 2 }
+
+// Points awarded for completing a session (kegel keeps its pulses/100 rule).
+export const POINTS: Partial<Record<ActivityType, number>> = { warmup: 1, strength: 3, run: 3 }
+// Streak shields: bought with points, auto-consumed to cover a missed day.
+export const SHIELDS = { cost: 25, max: 3 }
+// Weight-loss goal (kg).
+export const WEIGHT = { startKg: 100, goalKg: 90 }
+// Before this date only kegel counts toward the streak (activity logs didn't
+// persist in production before Phase 3 shipped).
+export const STREAK_EPOCH = '2026-07-02'
 
 const R = PROGRESSION.defaultRestSec
 
@@ -22,6 +33,8 @@ export const STRENGTH_CIRCUIT: StrengthExercise[] = [
   { key: 'pushup',        name: 'Push-up',          mediaKey: 'pushup',           sets: 1, startReps: 5,  perSide: false, rampStep: 1, restSec: R },
   { key: 'bent_row',      name: 'Bent-over row',    mediaKey: 'bent_over_row',    sets: 1, startReps: 12, perSide: true,  rampStep: 2, restSec: R },
   { key: 'glute_bridge',  name: 'Weighted glute bridge', mediaKey: 'glute_bridge', sets: 1, startReps: 12, perSide: false, rampStep: 2, restSec: R },
+  { key: 'kb_deadlift',   name: 'Kettlebell deadlift', mediaKey: 'kb_deadlift',   sets: 1, startReps: 12, perSide: false, rampStep: 2, restSec: R },
+  { key: 'suitcase_carry',name: 'Suitcase carry',      mediaKey: 'suitcase_carry',sets: 1, startReps: 30, perSide: true,  rampStep: 5, restSec: R, isHold: true },
   // Core finisher (back-safe, anti-movement). Planks are holds (startReps = seconds).
   { key: 'dead_bug',      name: 'Dead bug',    mediaKey: 'dead_bug',    sets: 1, startReps: 8,  perSide: true,  rampStep: 1, restSec: R },
   { key: 'front_plank',   name: 'Front plank', mediaKey: 'front_plank', sets: 1, startReps: 30, perSide: false, rampStep: 5, restSec: R, isHold: true },
@@ -36,6 +49,7 @@ export const WARMUP: WarmupMove[] = [
   { key: 'squat_reach',  name: 'Squat reach & twist', mediaKey: 'squat_reach_twist',  durationSec: 40 },
   { key: 'glute_march',  name: 'Glute bridge march',  mediaKey: 'glute_bridge_march', durationSec: 40 },
   { key: 'mtn_climber',  name: 'Mountain climber',    mediaKey: 'mountain_climber',   durationSec: 30 },
+  { key: 'band_pullapart', name: 'Band pull-apart',   mediaKey: 'band_pullapart',     durationSec: 30 },
 ]
 
 export const WEEKLY_SCHEDULE: Record<Weekday, ActivityType[]> = {
