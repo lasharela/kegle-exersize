@@ -27,6 +27,21 @@ const MEDIA_KEYS = new Set([
 
 const FALLBACK = '/icon-192.png'
 
+// Exercises without a local video use start/end photo frames from the
+// MIT-licensed free-exercise-db (via the jsDelivr CDN); ExerciseMedia
+// alternates the two frames to suggest the movement.
+const EXDB = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises'
+const IMAGE_KEYS: Record<string, string> = {
+  kb_deadlift: 'Sumo_Deadlift', // same hinge pattern, weight between the legs
+  suitcase_carry: 'Farmers_Walk',
+  band_pullapart: 'Band_Pull_Apart',
+}
+
+export function imageFrames(mediaKey: string): [string, string] | null {
+  const id = IMAGE_KEYS[mediaKey]
+  return id ? [`${EXDB}/${id}/0.jpg`, `${EXDB}/${id}/1.jpg`] : null
+}
+
 export function hasVideo(mediaKey: string): boolean {
   return MEDIA_KEYS.has(mediaKey)
 }
