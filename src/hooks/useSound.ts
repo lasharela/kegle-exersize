@@ -5,6 +5,11 @@ import { primeAudioSession, startSilentKeepAlive } from '../lib/audio-session'
 function createAudio(src: string) {
   const audio = new Audio(src)
   audio.preload = 'auto'
+  // iOS standalone PWAs play detached Audio elements unreliably — keep them
+  // in the DOM (hidden) so the media stack treats them as real players.
+  audio.setAttribute('playsinline', '')
+  audio.style.display = 'none'
+  document.body.appendChild(audio)
   return audio
 }
 

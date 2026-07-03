@@ -16,6 +16,7 @@ import type { Exercise, ActivityLog } from '../lib/types'
 import WeekCalendar from '../components/WeekCalendar'
 import HistoryGrid from '../components/HistoryGrid'
 import BadgeCard from '../components/BadgeCard'
+import SoundDiagnostics from '../components/SoundDiagnostics'
 
 export default function Settings() {
   const { profile, user, updateProfile, buyShield, logout } = useAuth()
@@ -291,6 +292,12 @@ export default function Settings() {
             <span className="text-sm">Haptics (vibration)</span>
             <input type="checkbox" checked={haptics} onChange={toggleHaptics} className="w-5 h-5 accent-primary" />
           </label>
+          <p className="text-text-dim text-[10px]">
+            iOS only vibrates web apps within ~1s of a tap — timer cues (rest end, completion) can't buzz; sound covers those.
+          </p>
+        </div>
+        <div className="mt-2 ml-1">
+          <SoundDiagnostics />
         </div>
       </div>
 
