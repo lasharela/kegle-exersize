@@ -7,6 +7,7 @@ import { WARMUP, POINTS } from '../lib/program'
 import ExerciseMedia from '../components/ExerciseMedia'
 import { logActivity } from '../lib/activity-log'
 import { squeezeBuzz, releaseBuzz, completeCelebrate } from '../lib/haptics'
+import { useSessionGuard, useRequestExit } from '../context/SessionGuardContext'
 
 type Phase = 'idle' | 'running' | 'done'
 
@@ -68,6 +69,18 @@ export default function Warmup() {
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
+
+  // Exiting mid-session saves a partial log instead of losing everything.
+  const requestExit = useRequestExit()
+  useSessionGuard(phase === 'running', async () => {
+    if (!profile) return
+    await logActivity({
+      userId: profile.userId,
+      type: 'warmup',
+      completed: false,
+      durationSec: elapsedRef.current,
+    })
+  })
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -143,10 +156,19 @@ export default function Warmup() {
 
   return (
     <div className="flex-1 flex flex-col px-4 py-4 gap-4">
-      {/* Progress header */}
-      <p className="text-text-dim text-xs text-center">
-        Move {moveIndex + 1} of {WARMUP.length}
-      </p>
+      {/* Progress header + explicit End control */}
+      <div className="relative">
+        <p className="text-text-dim text-xs text-center py-1">
+          Move {moveIndex + 1} of {WARMUP.length}
+        </p>
+        <button
+          onClick={() => requestExit('/')}
+          aria-label="End session"
+          className="absolute right-0 top-1/2 -translate-y-1/2 text-text-dim text-xs border border-border rounded-full px-3 py-1 active:opacity-70"
+        >
+          ✕ End
+        </button>
+      </div>
 
       {/* Looping video — plays on iOS standalone (unlike GIFs); contain, height-capped */}
       <ExerciseMedia

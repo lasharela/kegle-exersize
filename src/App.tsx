@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { SessionGuardProvider } from './context/SessionGuardContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Header from './components/Header'
 import Login from './pages/Login'
@@ -30,6 +31,7 @@ function Protected({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <AuthProvider>
+      <SessionGuardProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<Protected><Dashboard /></Protected>} />
@@ -40,6 +42,7 @@ export default function App() {
         <Route path="/settings" element={<Protected><Settings /></Protected>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </SessionGuardProvider>
     </AuthProvider>
   )
 }

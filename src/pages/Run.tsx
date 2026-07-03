@@ -9,6 +9,7 @@ import { localDateISO } from '../lib/date'
 import { logActivity, listActivityLogs } from '../lib/activity-log'
 import { shouldRamp } from '../lib/progression'
 import { completeCelebrate } from '../lib/haptics'
+import { useSessionGuard } from '../context/SessionGuardContext'
 
 type Phase = 'idle' | 'running' | 'done'
 
@@ -62,6 +63,12 @@ export default function Run() {
     })()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
+
+  // Exiting mid-session saves a partial log instead of losing everything.
+  useSessionGuard(phase === 'running', async () => {
+    if (!profile) return
+    await logActivity({ userId: profile.userId, type: 'run', completed: false, durationSec: elapsedRef.current })
+  })
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 

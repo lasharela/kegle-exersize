@@ -1,10 +1,11 @@
 import { useAuth } from '../context/AuthContext'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
+import { useRequestExit } from '../context/SessionGuardContext'
 
 export default function Header() {
   const { profile, streakDays, user } = useAuth()
-  const navigate = useNavigate()
+  const requestExit = useRequestExit()
   const location = useLocation()
 
   const isSettings = location.pathname === '/settings'
@@ -12,7 +13,10 @@ export default function Header() {
   const initials = profile?.initials ?? user?.name?.slice(0, 2)?.toUpperCase() ?? '?'
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+    <header
+      className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0"
+      style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}
+    >
       {onDashboard ? (
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
@@ -28,7 +32,7 @@ export default function Header() {
         </div>
       ) : (
         <button
-          onClick={() => navigate('/')}
+          onClick={() => requestExit('/')}
           aria-label="Back to dashboard"
           className="flex items-center gap-1 text-text font-semibold active:opacity-70 transition-opacity -ml-1"
         >
@@ -38,7 +42,7 @@ export default function Header() {
       )}
 
       <button
-        onClick={() => navigate(isSettings ? '/' : '/settings')}
+        onClick={() => requestExit(isSettings ? '/' : '/settings')}
         aria-label={isSettings ? 'Close settings' : 'Open settings'}
         className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm active:scale-95 transition-transform"
       >

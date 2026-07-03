@@ -11,6 +11,7 @@ import { isBreakPhase } from '../lib/exercise-engine'
 import { localDateISO } from '../lib/date'
 import { databases, DATABASE_ID, EXERCISES_COLLECTION } from '../lib/appwrite'
 import type { Exercise as ExerciseDoc } from '../lib/types'
+import { useSessionGuard } from '../context/SessionGuardContext'
 import PulseCircle from '../components/PulseCircle'
 import RestBreak from '../components/RestBreak'
 import CompletionOverlay from '../components/CompletionOverlay'
@@ -138,6 +139,13 @@ export default function Exercise() {
 
   const { phase, isPaused } = state
   const isRunning = phase !== 'idle' && phase !== 'completed' && phase !== 'countdown'
+
+  // Header Back / swipe-back mid-session: stop the engine (which saves the
+  // result) and stay on the page to show it, instead of silently leaving.
+  useSessionGuard(isRunning, () => {
+    stop()
+    return 'stay'
+  })
   const nextLevelTarget = profile ? nextTarget(profile.currentTarget) : null
 
   return (

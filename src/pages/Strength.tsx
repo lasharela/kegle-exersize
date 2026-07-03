@@ -10,6 +10,7 @@ import { localDateISO } from '../lib/date'
 import { logActivity, listActivityLogs } from '../lib/activity-log'
 import { shouldRamp } from '../lib/progression'
 import { pulseTap, squeezeBuzz, breakBuzz, completeCelebrate } from '../lib/haptics'
+import { useSessionGuard, useRequestExit } from '../context/SessionGuardContext'
 import ExerciseCard from '../components/ExerciseCard'
 import RestTimer from '../components/RestTimer'
 
@@ -108,6 +109,19 @@ export default function Strength() {
     })()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
+
+  // Exiting mid-session saves a partial log instead of losing everything.
+  const requestExit = useRequestExit()
+  useSessionGuard(phase === 'running', async () => {
+    if (!profile) return
+    await logActivity({
+      userId: profile.userId,
+      type: 'strength',
+      completed: false,
+      durationSec: elapsedRef.current,
+      payload: { reps: repsByKey, stoppedAtStep: index },
+    })
+  })
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -238,10 +252,19 @@ export default function Strength() {
 
   return (
     <div className="flex-1 flex flex-col px-4 py-4 gap-4">
-      {/* Progress header */}
-      <p className="text-text-dim text-xs text-center">
-        Step {index + 1} of {totalSteps}
-      </p>
+      {/* Progress header + explicit End control */}
+      <div className="relative">
+        <p className="text-text-dim text-xs text-center py-1">
+          Step {index + 1} of {totalSteps}
+        </p>
+        <button
+          onClick={() => requestExit('/')}
+          aria-label="End session"
+          className="absolute right-0 top-1/2 -translate-y-1/2 text-text-dim text-xs border border-border rounded-full px-3 py-1 active:opacity-70"
+        >
+          ✕ End
+        </button>
+      </div>
 
       {step.kind === 'exercise' && (
         <>
