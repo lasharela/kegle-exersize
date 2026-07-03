@@ -5,6 +5,13 @@ export interface ActivityLog {
   completed: boolean; durationSec: number; payload?: string
 }
 
+export interface WeightLog {
+  $id: string
+  userId: string
+  date: string
+  kg: number
+}
+
 export interface Profile {
   $id: string
   userId: string
