@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useSound } from '../hooks/useSound'
 import { useElapsed } from '../hooks/useTimer'
 import { parseTrainingState } from '../lib/training-state'
 import { RUNNING, POINTS } from '../lib/program'
@@ -16,7 +15,6 @@ type Phase = 'idle' | 'running' | 'done'
 export default function Run() {
   const { profile, updateProfile, refreshProfile } = useAuth()
   const navigate = useNavigate()
-  const { fastBeep, completionFanfare, initAudio } = useSound()
 
   // Local YYYY-MM-DD (not toISOString which gives UTC)
   const today = useMemo(() => localDateISO(), [])
@@ -35,21 +33,9 @@ export default function Run() {
   const elapsedRef = useRef(0)
   elapsedRef.current = elapsed
 
-  // Soft beep each completed minute
-  const lastBeepMinRef = useRef(0)
-  useEffect(() => {
-    const min = Math.floor(elapsed / 60)
-    if (elapsed > 0 && min > 0 && min !== lastBeepMinRef.current) {
-      lastBeepMinRef.current = min
-      fastBeep()
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elapsed])
-
   // Completion side-effects (log + progression check)
   useEffect(() => {
     if (phase !== 'done' || !profile || !state) return
-    completionFanfare()
     completeCelebrate()
 
     const durationSec = elapsedRef.current
@@ -73,7 +59,6 @@ export default function Run() {
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleStart = () => {
-    initAudio()
     setPhase('running')
   }
 

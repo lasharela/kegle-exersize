@@ -14,6 +14,9 @@ export const RUNNING = { startMinutes: 20, rampStepMinutes: 2 }
 
 // Points awarded for completing a session (kegel keeps its pulses/100 rule).
 export const POINTS: Partial<Record<ActivityType, number>> = { warmup: 1, strength: 3, run: 3 }
+// A circuit session counts toward the day/streak once at least this fraction of
+// its work (sets / moves) is done — i.e. "you did most of it".
+export const MIN_CREDIT_FRACTION = 0.5
 // Streak shields: bought with points, auto-consumed to cover a missed day.
 export const SHIELDS = { cost: 25, max: 3 }
 // Weight-loss goal (kg).

@@ -1,16 +1,15 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useSound } from '../hooks/useSound'
 import { useTimer, useElapsed } from '../hooks/useTimer'
 import { buildSteps, useCircuit } from '../hooks/useCircuit'
 import { parseTrainingState } from '../lib/training-state'
-import { STRENGTH_CIRCUIT, POINTS } from '../lib/program'
+import { STRENGTH_CIRCUIT, POINTS, MIN_CREDIT_FRACTION } from '../lib/program'
 import { localDateISO } from '../lib/date'
 import { logActivity, listActivityLogs } from '../lib/activity-log'
 import { shouldRamp } from '../lib/progression'
 import { pulseTap, squeezeBuzz, breakBuzz, completeCelebrate } from '../lib/haptics'
-import { useSessionGuard, useRequestExit } from '../context/SessionGuardContext'
+import { useSessionGuard } from '../context/SessionGuardContext'
 import ExerciseCard from '../components/ExerciseCard'
 import RestTimer from '../components/RestTimer'
 
@@ -19,7 +18,6 @@ type Phase = 'idle' | 'running' | 'done'
 export default function Strength() {
   const { profile, updateProfile, refreshProfile } = useAuth()
   const navigate = useNavigate()
-  const { squeezeChime, fastBeep, breakSound, completionFanfare, initAudio } = useSound()
 
   // Local YYYY-MM-DD (not toISOString which gives UTC)
   const today = useMemo(() => localDateISO(), [])
@@ -41,6 +39,12 @@ export default function Strength() {
   const [phase, setPhase] = useState<Phase>('idle')
   const [restRemaining, setRestRemaining] = useState(0)
   const [canRamp, setCanRamp] = useState(false)
+  const [setsDone, setSetsDone] = useState(0)
+
+  // Total work in the circuit (sets across all exercises). Used to credit the
+  // session when the user finishes after doing at least half of it.
+  const totalSets = useMemo(() => STRENGTH_CIRCUIT.reduce((n, e) => n + e.sets, 0), [])
+  const didEnough = totalSets > 0 && setsDone / totalSets >= MIN_CREDIT_FRACTION
 
   const { index, step, done, next } = useCircuit(steps)
 
@@ -74,7 +78,6 @@ export default function Strength() {
   // ticked, never on the entry render where restRemaining is still stale (0).
   useEffect(() => {
     if (!isRestActive || restRemaining > 0 || !restTickedRef.current) return
-    breakSound()
     breakBuzz()
     next()
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,21 +89,22 @@ export default function Strength() {
     setPhase('done')
   }, [done, phase])
 
-  // Completion side-effects (log + progression check)
+  // Completion side-effects (log + progression check). Credits the day/streak
+  // when at least half the sets were done; only then award points + offer ramp.
   useEffect(() => {
     if (phase !== 'done' || !profile || !state) return
-    completionFanfare()
-    completeCelebrate()
+    if (didEnough) completeCelebrate()
 
     const durationSec = elapsedRef.current
     void (async () => {
       await logActivity({
         userId: profile.userId,
         type: 'strength',
-        completed: true,
+        completed: didEnough,
         durationSec,
-        payload: { reps: repsByKey },
+        payload: { reps: repsByKey, setsDone, totalSets },
       })
+      if (!didEnough) return
       await updateProfile({ totalPoints: profile.totalPoints + (POINTS.strength ?? 0) })
       const logs = await listActivityLogs(profile.userId)
       if (shouldRamp(logs, { type: 'strength', sinceISO: state.levelStart.strength })) {
@@ -110,16 +114,16 @@ export default function Strength() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
 
-  // Exiting mid-session saves a partial log instead of losing everything.
-  const requestExit = useRequestExit()
+  // Swipe/back-gesture mid-session saves the same partial log (credited if you
+  // got at least halfway) instead of losing everything.
   useSessionGuard(phase === 'running', async () => {
     if (!profile) return
     await logActivity({
       userId: profile.userId,
       type: 'strength',
-      completed: false,
+      completed: didEnough,
       durationSec: elapsedRef.current,
-      payload: { reps: repsByKey, stoppedAtStep: index },
+      payload: { reps: repsByKey, setsDone, totalSets, stoppedAtStep: index },
     })
   })
 
@@ -127,23 +131,24 @@ export default function Strength() {
 
   const handleStart = () => {
     if (!profile) return
-    initAudio()
     setPhase('running')
-    squeezeChime()
     squeezeBuzz()
   }
 
   const handleDoneSet = () => {
-    fastBeep()
     pulseTap()
+    setSetsDone((n) => n + 1)
     next()
   }
 
   const handleSkipRest = () => {
-    breakSound()
     breakBuzz()
     next()
   }
+
+  // Finish now: ends the circuit and shows the summary. The done-effect logs it
+  // (credited toward today/streak if at least half the sets were done).
+  const handleFinish = () => setPhase('done')
 
   const handleAddTime = () => setRestRemaining((r) => r + 15)
 
@@ -197,12 +202,20 @@ export default function Strength() {
   if (phase === 'done') {
     const mins = Math.floor(elapsed / 60)
     const secs = elapsed % 60
+    const allDone = setsDone >= totalSets
     return (
       <div className="flex-1 flex flex-col items-center px-6 py-8 gap-6 overflow-y-auto">
-        <h1 className="text-green font-bold text-3xl">Circuit Complete!</h1>
+        <h1 className="text-green font-bold text-3xl">{allDone ? 'Circuit Complete!' : 'Nice work!'}</h1>
         <p className="text-text-dim text-sm">
-          {mins}:{String(secs).padStart(2, '0')} total
+          {setsDone}/{totalSets} sets · {mins}:{String(secs).padStart(2, '0')} total
         </p>
+        {!allDone && (
+          <p className="text-text-dim text-xs text-center">
+            {didEnough
+              ? '✓ Counts toward today'
+              : `Do at least ${Math.ceil(totalSets * MIN_CREDIT_FRACTION)} sets to count toward your streak`}
+          </p>
+        )}
 
         {canRamp && (
           <div className="w-full bg-surface border border-green/30 rounded-2xl p-5">
@@ -258,11 +271,11 @@ export default function Strength() {
           Step {index + 1} of {totalSteps}
         </p>
         <button
-          onClick={() => requestExit('/')}
-          aria-label="End session"
+          onClick={handleFinish}
+          aria-label="Finish workout"
           className="absolute right-0 top-1/2 -translate-y-1/2 text-text-dim text-xs border border-border rounded-full px-3 py-1 active:opacity-70"
         >
-          ✕ End
+          Finish
         </button>
       </div>
 

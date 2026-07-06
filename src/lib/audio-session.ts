@@ -23,6 +23,18 @@ export function primeAudioSession() {
   }
 }
 
+// Release the "playback" grab so other apps' background audio (music) can play.
+// 'ambient' mixes with other audio and obeys the mute switch — appropriate for
+// screens that make no sound. Called when leaving the sound-enabled (Kegel) page.
+export function releaseAudioSession() {
+  try {
+    const s = getAudioSession()
+    if (s) s.type = 'ambient'
+  } catch {
+    /* unsupported — ignore */
+  }
+}
+
 export function audioSessionInfo(): { supported: boolean; type: string | null } {
   try {
     const s = getAudioSession()
@@ -55,6 +67,16 @@ export function startSilentKeepAlive() {
   }
 }
 
+// Pause the keep-alive loop so it stops holding the audio channel open. The
+// element is kept in the DOM so a later startSilentKeepAlive() can resume it.
+export function stopSilentKeepAlive() {
+  try {
+    if (keepAlive && !keepAlive.paused) keepAlive.pause()
+  } catch {
+    /* ignore */
+  }
+}
+
 export function keepAliveState(): { exists: boolean; playing: boolean; currentTime: number } {
   return {
     exists: keepAlive !== null,
@@ -69,11 +91,13 @@ function unlocked(): boolean {
   return keepAlive !== null
 }
 
-// Call once at app startup: primes the session immediately and re-primes it +
-// restarts the keep-alive whenever the app returns to the foreground. iOS
-// standalone PWAs tear the audio session down on background; without this the
-// first cue after returning is silent or delayed.
-export function initAudioLifecycle() {
+// Scoped to the sound-enabled (Kegel) screen — NOT the whole app. Primes the
+// session immediately and re-primes it + restarts the keep-alive whenever the
+// app returns to the foreground (iOS standalone PWAs tear the audio session down
+// on background; without this the first cue after returning is silent/delayed).
+// Returns a cleanup that removes the listeners, stops the keep-alive, and
+// releases the "playback" session so background music can resume on other pages.
+export function initAudioLifecycle(): () => void {
   primeAudioSession()
   const onForeground = () => {
     if (document.visibilityState !== 'visible') return
@@ -83,4 +107,11 @@ export function initAudioLifecycle() {
   document.addEventListener('visibilitychange', onForeground)
   window.addEventListener('pageshow', onForeground)
   window.addEventListener('focus', onForeground)
+  return () => {
+    document.removeEventListener('visibilitychange', onForeground)
+    window.removeEventListener('pageshow', onForeground)
+    window.removeEventListener('focus', onForeground)
+    stopSilentKeepAlive()
+    releaseAudioSession()
+  }
 }

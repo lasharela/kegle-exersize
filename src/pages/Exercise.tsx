@@ -8,6 +8,7 @@ import { canLevelUp } from '../lib/progression'
 import { nextTarget, levelNumber } from '../lib/levels'
 import { pulseTap, squeezeBuzz, releaseBuzz, breakBuzz, completeCelebrate } from '../lib/haptics'
 import { isBreakPhase } from '../lib/exercise-engine'
+import { initAudioLifecycle } from '../lib/audio-session'
 import { localDateISO } from '../lib/date'
 import { databases, DATABASE_ID, EXERCISES_COLLECTION } from '../lib/appwrite'
 import type { Exercise as ExerciseDoc } from '../lib/types'
@@ -30,6 +31,11 @@ export default function Exercise() {
   const prevPhase = useRef(state.phase)
   const prevPulses = useRef(state.pulsesCompleted)
   const startTimeRef = useRef<string>('')
+
+  // Own the iOS audio session only while the Kegel page is mounted. On unmount
+  // the keep-alive stops and the "playback" grab is released so background music
+  // can play on the other (now-silent) exercise pages.
+  useEffect(() => initAudioLifecycle(), [])
 
   // Sound + haptics on phase changes (warmups, breaks, completion)
   useEffect(() => {

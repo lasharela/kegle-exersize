@@ -1,24 +1,26 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useSound } from '../hooks/useSound'
 import { useTimer, useElapsed } from '../hooks/useTimer'
-import { WARMUP, POINTS } from '../lib/program'
+import { WARMUP, POINTS, MIN_CREDIT_FRACTION } from '../lib/program'
 import ExerciseMedia from '../components/ExerciseMedia'
 import { logActivity } from '../lib/activity-log'
 import { squeezeBuzz, releaseBuzz, completeCelebrate } from '../lib/haptics'
-import { useSessionGuard, useRequestExit } from '../context/SessionGuardContext'
+import { useSessionGuard } from '../context/SessionGuardContext'
 
 type Phase = 'idle' | 'running' | 'done'
 
 export default function Warmup() {
   const { profile, updateProfile } = useAuth()
   const navigate = useNavigate()
-  const { squeezeChime, releaseChime, completionFanfare, initAudio } = useSound()
 
   const [phase, setPhase] = useState<Phase>('idle')
   const [moveIndex, setMoveIndex] = useState(0)
   const [remaining, setRemaining] = useState(0)
+  const [movesDone, setMovesDone] = useState(0)
+
+  // Credit the session toward the day/streak once at least half the moves are done.
+  const didEnough = movesDone / WARMUP.length >= MIN_CREDIT_FRACTION
 
   const { elapsed } = useElapsed(phase === 'running')
   const elapsedRef = useRef(0)
@@ -52,47 +54,56 @@ export default function Warmup() {
   }, [remaining, phase])
 
   // ── Completion side-effects ───────────────────────────────────────────────
+  // Credits the day/streak when at least half the moves were done; only then
+  // award points.
   useEffect(() => {
     if (phase !== 'done' || !profile) return
-    completionFanfare()
-    completeCelebrate()
+    if (didEnough) completeCelebrate()
 
     const durationSec = elapsedRef.current
     void (async () => {
       await logActivity({
         userId: profile.userId,
         type: 'warmup',
-        completed: true,
+        completed: didEnough,
         durationSec,
+        payload: { movesDone, totalMoves: WARMUP.length },
       })
-      await updateProfile({ totalPoints: profile.totalPoints + (POINTS.warmup ?? 0) })
+      if (didEnough) {
+        await updateProfile({ totalPoints: profile.totalPoints + (POINTS.warmup ?? 0) })
+      }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
 
-  // Exiting mid-session saves a partial log instead of losing everything.
-  const requestExit = useRequestExit()
+  // Swipe/back-gesture mid-session saves the same partial log (credited if you
+  // got at least halfway) instead of losing everything.
   useSessionGuard(phase === 'running', async () => {
     if (!profile) return
     await logActivity({
       userId: profile.userId,
       type: 'warmup',
-      completed: false,
+      completed: didEnough,
       durationSec: elapsedRef.current,
+      payload: { movesDone, totalMoves: WARMUP.length },
     })
   })
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   function advanceMove() {
-    releaseChime()
     releaseBuzz()
+    setMovesDone((n) => n + 1)
     if (moveIndex >= WARMUP.length - 1) {
       setPhase('done')
     } else {
       setMoveIndex((i) => i + 1)
     }
   }
+
+  // Finish now: ends the warm-up and shows the summary. The done-effect logs it
+  // (credited toward today/streak if at least half the moves were done).
+  const handleFinish = () => setPhase('done')
 
   // ── Guard ─────────────────────────────────────────────────────────────────
 
@@ -113,10 +124,9 @@ export default function Warmup() {
         <p className="text-text-dim text-sm text-center">~{WARMUP.length} moves</p>
         <button
           onClick={() => {
-            initAudio()
             setPhase('running')
             setMoveIndex(0)
-            squeezeChime()
+            setMovesDone(0)
             squeezeBuzz()
           }}
           className="bg-primary text-white font-bold rounded-full px-10 py-4 text-lg active:scale-95 transition-transform"
@@ -132,12 +142,20 @@ export default function Warmup() {
   if (phase === 'done') {
     const mins = Math.floor(elapsed / 60)
     const secs = elapsed % 60
+    const allDone = movesDone >= WARMUP.length
     return (
       <div className="flex-1 flex flex-col items-center px-6 py-8 gap-6">
-        <h1 className="text-green font-bold text-3xl">Warm-up done!</h1>
+        <h1 className="text-green font-bold text-3xl">{allDone ? 'Warm-up done!' : 'Nice work!'}</h1>
         <p className="text-text-dim text-sm">
-          {mins}:{String(secs).padStart(2, '0')} total
+          {movesDone}/{WARMUP.length} moves · {mins}:{String(secs).padStart(2, '0')} total
         </p>
+        {!allDone && (
+          <p className="text-text-dim text-xs text-center">
+            {didEnough
+              ? '✓ Counts toward today'
+              : `Do at least ${Math.ceil(WARMUP.length * MIN_CREDIT_FRACTION)} moves to count toward your streak`}
+          </p>
+        )}
         <button
           onClick={() => navigate('/')}
           className="w-full bg-surface border border-border text-text font-semibold rounded-full py-3 active:scale-95 transition-transform"
@@ -162,11 +180,11 @@ export default function Warmup() {
           Move {moveIndex + 1} of {WARMUP.length}
         </p>
         <button
-          onClick={() => requestExit('/')}
-          aria-label="End session"
+          onClick={handleFinish}
+          aria-label="Finish warm-up"
           className="absolute right-0 top-1/2 -translate-y-1/2 text-text-dim text-xs border border-border rounded-full px-3 py-1 active:opacity-70"
         >
-          ✕ End
+          Finish
         </button>
       </div>
 
