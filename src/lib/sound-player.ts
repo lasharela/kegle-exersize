@@ -1,5 +1,5 @@
 import { soundEnabled } from './settings'
-import { primeAudioSession, startSilentKeepAlive } from './audio-session'
+import { primeAudioSession, startSilentKeepAlive, stopSilentKeepAlive } from './audio-session'
 
 export type SoundName = 'chimeUp' | 'chimeDown' | 'beep' | 'breakStart' | 'complete'
 type WebAudioWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }
@@ -7,24 +7,37 @@ type WebAudioWindow = Window & typeof globalThis & { webkitAudioContext?: typeof
 const SOUND_URLS: Record<SoundName, string> = {
   chimeUp: '/chime-up.mp3',
   chimeDown: '/chime-down.mp3',
-  beep: '/beep.mp3',
+  beep: '/beep.wav',
   breakStart: '/break-start.mp3',
   complete: '/complete.mp3',
-}
-
-const POOL_SIZE: Record<SoundName, number> = {
-  chimeUp: 3,
-  chimeDown: 3,
-  beep: 6,
-  breakStart: 2,
-  complete: 2,
 }
 
 let audioContext: AudioContext | null = null
 const buffers = new Map<SoundName, AudioBuffer>()
 const loading = new Map<SoundName, Promise<void>>()
-const fallbackPools = new Map<SoundName, HTMLAudioElement[]>()
-let unlocked = false
+const mediaUrls = new Map<SoundName, string>()
+const mediaLoading = new Map<SoundName, Promise<void>>()
+let mediaPlayer: HTMLAudioElement | null = null
+let webAudioUnlocked = false
+let mediaUnlocked = false
+let lastError: string | null = null
+
+function isStandalone() {
+  if (window.matchMedia('(display-mode: standalone)').matches) return true
+  return 'standalone' in navigator && !!(navigator as unknown as { standalone: boolean }).standalone
+}
+
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+}
+
+// WebKit has an open bug where a PWA AudioContext can remain "running" while
+// producing silence after relaunch. A single HTMLAudioElement is the more
+// reliable path on installed iOS apps and follows Apple's one-stream guidance.
+function shouldUseMediaElement() {
+  return isIOS() && isStandalone()
+}
 
 function audioConstructor() {
   return window.AudioContext ?? (window as WebAudioWindow).webkitAudioContext
@@ -38,35 +51,53 @@ function ensureContext(): AudioContext | null {
   return audioContext
 }
 
-function createAudio(src: string) {
-  const audio = new Audio(src)
-  audio.preload = 'auto'
-  audio.setAttribute('playsinline', '')
-  audio.style.display = 'none'
-  document.body.appendChild(audio)
-  return audio
-}
-
-function fallbackPool(name: SoundName) {
-  let pool = fallbackPools.get(name)
-  if (!pool) {
-    pool = Array.from({ length: POOL_SIZE[name] }, () => createAudio(SOUND_URLS[name]))
-    fallbackPools.set(name, pool)
+function ensureMediaPlayer() {
+  if (!mediaPlayer) {
+    mediaPlayer = new Audio()
+    mediaPlayer.preload = 'auto'
+    mediaPlayer.setAttribute('playsinline', '')
+    mediaPlayer.style.display = 'none'
+    document.body.appendChild(mediaPlayer)
   }
-  return pool
+  return mediaPlayer
 }
 
-function playFallback(name: SoundName) {
-  const pool = fallbackPool(name)
-  const audio = pool.find((a) => a.paused || a.ended) ?? pool.reduce((oldest, a) => (
-    a.currentTime > oldest.currentTime ? a : oldest
-  ), pool[0])
+function loadMedia(name: SoundName) {
+  if (mediaUrls.has(name)) return Promise.resolve()
+  const existing = mediaLoading.get(name)
+  if (existing) return existing
+  const promise = fetch(SOUND_URLS[name])
+    .then((res) => {
+      if (!res.ok) throw new Error(`failed to load ${SOUND_URLS[name]}`)
+      return res.blob()
+    })
+    .then((blob) => { mediaUrls.set(name, URL.createObjectURL(blob)) })
+    .catch((error: unknown) => {
+      lastError = error instanceof Error ? error.message : 'media preload failed'
+    })
+  mediaLoading.set(name, promise)
+  return promise
+}
+
+async function playMedia(name: SoundName) {
+  const player = ensureMediaPlayer()
+  const src = mediaUrls.get(name) ?? SOUND_URLS[name]
   try {
-    audio.pause()
-    audio.currentTime = 0
-    void audio.play().catch(() => {})
-  } catch {
-    /* unavailable media path; Web Audio may still work next cue */
+    player.pause()
+    if (player.getAttribute('src') !== src) {
+      player.src = src
+      player.load()
+    } else {
+      player.currentTime = 0
+    }
+    // This call must occur before the first await when invoked by Start/Resume.
+    await player.play()
+    mediaUnlocked = true
+    lastError = null
+    return true
+  } catch (error) {
+    lastError = error instanceof Error ? error.message : 'media playback was blocked'
+    return false
   }
 }
 
@@ -101,7 +132,7 @@ function playBuffer(name: SoundName, ctx: AudioContext) {
 }
 
 function unlockContext(ctx: AudioContext) {
-  if (unlocked) return
+  if (webAudioUnlocked) return
   const source = ctx.createBufferSource()
   source.buffer = ctx.createBuffer(1, 1, ctx.sampleRate)
   const gain = ctx.createGain()
@@ -109,33 +140,56 @@ function unlockContext(ctx: AudioContext) {
   source.connect(gain)
   gain.connect(ctx.destination)
   source.start()
-  unlocked = true
+  webAudioUnlocked = true
 }
 
-export async function unlockSoundEngine() {
+export function preloadSoundEngine() {
+  ensureMediaPlayer()
+  for (const name of Object.keys(SOUND_URLS) as SoundName[]) void loadMedia(name)
+  if (!shouldUseMediaElement()) {
+    for (const name of Object.keys(SOUND_URLS) as SoundName[]) void loadBuffer(name)
+  }
+}
+
+export async function unlockSoundEngine(confirmation?: SoundName) {
+  if (!soundEnabled()) return false
   primeAudioSession()
-  startSilentKeepAlive()
-  Object.keys(SOUND_URLS).forEach((name) => fallbackPool(name as SoundName).forEach((audio) => audio.load()))
+  preloadSoundEngine()
+
+  if (shouldUseMediaElement()) {
+    stopSilentKeepAlive()
+    const cue = confirmation ?? (mediaUnlocked ? null : 'chimeUp')
+    return cue ? playMedia(cue) : true
+  }
 
   const ctx = ensureContext()
-  if (!ctx) return
+  if (!ctx) return playMedia(confirmation ?? 'chimeUp')
   try {
+    startSilentKeepAlive()
     if (ctx.state !== 'running') await ctx.resume()
     unlockContext(ctx)
     await Promise.all(Object.keys(SOUND_URLS).map((name) => loadBuffer(name as SoundName)))
-  } catch {
-    /* HTMLAudio fallback remains available */
+    if (confirmation && playBuffer(confirmation, ctx)) return true
+    lastError = null
+    return true
+  } catch (error) {
+    lastError = error instanceof Error ? error.message : 'Web Audio unlock failed'
+    return playMedia(confirmation ?? 'chimeUp')
   }
 }
 
 export function playSound(name: SoundName) {
   if (!soundEnabled()) return
   primeAudioSession()
-  void startSilentKeepAlive()
+
+  if (shouldUseMediaElement()) {
+    void playMedia(name)
+    return
+  }
 
   const ctx = ensureContext()
   if (!ctx) {
-    playFallback(name)
+    void playMedia(name)
     return
   }
 
@@ -143,5 +197,14 @@ export function playSound(name: SoundName) {
   if (playBuffer(name, ctx)) return
 
   void loadBuffer(name)
-  playFallback(name)
+  void playMedia(name)
+}
+
+export function soundEngineInfo() {
+  return {
+    mode: shouldUseMediaElement() ? 'iOS media element' : 'Web Audio',
+    unlocked: shouldUseMediaElement() ? mediaUnlocked : webAudioUnlocked,
+    state: shouldUseMediaElement() ? (mediaPlayer?.paused ? 'paused' : 'playing') : (audioContext?.state ?? 'not created'),
+    lastError,
+  }
 }

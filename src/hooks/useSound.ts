@@ -12,8 +12,8 @@ export function useSound() {
   const breakSound = useCallback(() => play('breakStart'), [play])
   const completionFanfare = useCallback(() => play('complete'), [play])
 
-  const initAudio = useCallback(() => {
-    void unlockSoundEngine()
+  const initAudio = useCallback((confirmation?: SoundName) => {
+    return unlockSoundEngine(confirmation)
   }, [])
 
   return { squeezeChime, releaseChime, fastBeep, breakSound, completionFanfare, initAudio }

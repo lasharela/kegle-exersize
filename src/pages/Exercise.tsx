@@ -9,6 +9,7 @@ import { nextTarget, levelNumber } from '../lib/levels'
 import { pulseTap, squeezeBuzz, releaseBuzz, breakBuzz, completeCelebrate } from '../lib/haptics'
 import { isBreakPhase } from '../lib/exercise-engine'
 import { initAudioLifecycle } from '../lib/audio-session'
+import { preloadSoundEngine } from '../lib/sound-player'
 import { localDateISO } from '../lib/date'
 import { databases, DATABASE_ID, EXERCISES_COLLECTION } from '../lib/appwrite'
 import type { Exercise as ExerciseDoc } from '../lib/types'
@@ -36,6 +37,7 @@ export default function Exercise() {
   // the keep-alive stops and the "playback" grab is released so background music
   // can play on the other (now-silent) exercise pages.
   useEffect(() => initAudioLifecycle(), [])
+  useEffect(() => { preloadSoundEngine() }, [])
 
   // Sound + haptics on phase changes (warmups, breaks, completion)
   useEffect(() => {
@@ -122,10 +124,15 @@ export default function Exercise() {
     setShowCompletion(true)
   }
 
-  const handleStart = () => {
-    initAudio()
+  const handleStart = async () => {
+    await initAudio('chimeUp')
     startTimeRef.current = new Date().toISOString()
     start()
+  }
+
+  const handleResume = async () => {
+    await initAudio('chimeUp')
+    resume()
   }
 
   const handleCloseCompletion = async () => {
@@ -181,7 +188,7 @@ export default function Exercise() {
         {isRunning && (
           <div className="flex gap-3">
             <button
-              onClick={isPaused ? resume : pause}
+              onClick={isPaused ? handleResume : pause}
               className="flex-1 bg-surface border border-border text-text font-semibold rounded-full py-3 active:scale-95 transition-transform"
             >
               {isPaused ? 'Resume' : 'Pause'}
