@@ -6,6 +6,7 @@ import { ChevronDown } from 'lucide-react'
 import { useSound } from '../hooks/useSound'
 import { audioSessionInfo, keepAliveState, startSilentKeepAlive, primeAudioSession } from '../lib/audio-session'
 import { soundEnabled } from '../lib/settings'
+import { APP_VERSION } from '../lib/version'
 
 function isStandalone(): boolean {
   if (window.matchMedia('(display-mode: standalone)').matches) return true
@@ -65,6 +66,7 @@ export default function SoundDiagnostics() {
             value={keepAlive.exists ? (keepAlive.playing ? `playing (${keepAlive.currentTime.toFixed(1)}s)` : 'PAUSED') : 'not started'}
             ok={keepAlive.exists && keepAlive.playing}
           />
+          <Row label="Version" value={APP_VERSION} />
           <Row label="Build" value={new Date(__BUILD_TIME__).toLocaleString()} />
 
           <div className="h-px bg-border my-1" />

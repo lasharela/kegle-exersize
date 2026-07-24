@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { APP_VERSION } from '../lib/version'
 
 function getInitials(name: string): string {
   return name
@@ -95,6 +96,9 @@ export default function Login() {
         >
           {isRegister ? 'Already have an account? Log in' : "Don't have an account? Sign up"}
         </button>
+        <p className="text-text-dim/70 text-[10px] text-center mt-8 tracking-wide tabular-nums">
+          {APP_VERSION}
+        </p>
       </div>
     </div>
   )

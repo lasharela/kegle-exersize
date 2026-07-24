@@ -2,6 +2,7 @@ import { useAuth } from '../context/AuthContext'
 import { useLocation } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
 import { useRequestExit } from '../context/SessionGuardContext'
+import { APP_VERSION } from '../lib/version'
 
 export default function Header() {
   const { profile, streakDays, user } = useAuth()
@@ -41,19 +42,24 @@ export default function Header() {
         </button>
       )}
 
-      <button
-        onClick={() => requestExit(isSettings ? '/' : '/settings')}
-        aria-label={isSettings ? 'Close settings' : 'Open settings'}
-        className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm active:scale-95 transition-transform"
-      >
-        {isSettings ? (
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M12 4L4 12M4 4l8 8" />
-          </svg>
-        ) : (
-          initials
-        )}
-      </button>
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] tracking-wide text-text-dim tabular-nums" aria-label={`App version ${APP_VERSION}`}>
+          {APP_VERSION}
+        </span>
+        <button
+          onClick={() => requestExit(isSettings ? '/' : '/settings')}
+          aria-label={isSettings ? 'Close settings' : 'Open settings'}
+          className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm active:scale-95 transition-transform"
+        >
+          {isSettings ? (
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M12 4L4 12M4 4l8 8" />
+            </svg>
+          ) : (
+            initials
+          )}
+        </button>
+      </div>
     </header>
   )
 }
