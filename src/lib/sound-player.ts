@@ -81,10 +81,19 @@ function loadMedia(name: SoundName) {
 
 async function playMedia(name: SoundName) {
   const player = ensureMediaPlayer()
-  const src = mediaUrls.get(name) ?? SOUND_URLS[name]
+  const resetSource = shouldUseMediaElement()
+  const src = resetSource ? SOUND_URLS[name] : (mediaUrls.get(name) ?? SOUND_URLS[name])
   try {
     player.pause()
-    if (player.getAttribute('src') !== src) {
+    if (resetSource) {
+      // iOS 26 can keep an installed app's media pipeline in a silent state
+      // across launches. Clearing and reassigning src immediately before play
+      // forces WebKit to rebuild that pipeline.
+      player.removeAttribute('src')
+      player.load()
+      player.src = src
+      player.load()
+    } else if (player.getAttribute('src') !== src) {
       player.src = src
       player.load()
     } else {
@@ -145,10 +154,9 @@ function unlockContext(ctx: AudioContext) {
 
 export function preloadSoundEngine() {
   ensureMediaPlayer()
+  if (shouldUseMediaElement()) return
   for (const name of Object.keys(SOUND_URLS) as SoundName[]) void loadMedia(name)
-  if (!shouldUseMediaElement()) {
-    for (const name of Object.keys(SOUND_URLS) as SoundName[]) void loadBuffer(name)
-  }
+  for (const name of Object.keys(SOUND_URLS) as SoundName[]) void loadBuffer(name)
 }
 
 export async function unlockSoundEngine(confirmation?: SoundName) {
