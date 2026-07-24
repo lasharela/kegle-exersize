@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Query } from 'appwrite'
-import { Shield, ChevronDown, Minus, Plus } from 'lucide-react'
+import { Shield, ChevronDown, Minus, Plus, Volume2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useLeveling } from '../hooks/useLeveling'
 import { databases, DATABASE_ID, EXERCISES_COLLECTION } from '../lib/appwrite'
@@ -11,6 +11,7 @@ import { soundEnabled, setSoundEnabled, hapticsEnabled, setHapticsEnabled } from
 import { parseTrainingState } from '../lib/training-state'
 import { STRENGTH_CIRCUIT, PROGRESSION, SHIELDS } from '../lib/program'
 import { localDateISO } from '../lib/date'
+import { unlockSoundEngine } from '../lib/sound-player'
 import { listActivityLogs } from '../lib/activity-log'
 import type { Exercise, ActivityLog } from '../lib/types'
 import WeekCalendar from '../components/WeekCalendar'
@@ -29,9 +30,20 @@ export default function Settings() {
   const [showHistory, setShowHistory] = useState(false)
   const [sound, setSound] = useState(soundEnabled())
   const [haptics, setHaptics] = useState(hapticsEnabled())
+  const [soundTest, setSoundTest] = useState<'idle' | 'testing' | 'accepted' | 'blocked'>('idle')
 
   const toggleSound = () => { const v = !sound; setSound(v); setSoundEnabled(v) }
   const toggleHaptics = () => { const v = !haptics; setHaptics(v); setHapticsEnabled(v) }
+
+  const handleTestSound = async () => {
+    if (!sound) {
+      setSound(true)
+      setSoundEnabled(true)
+    }
+    setSoundTest('testing')
+    const accepted = await unlockSoundEngine('complete')
+    setSoundTest(accepted ? 'accepted' : 'blocked')
+  }
 
   useEffect(() => {
     if (!profile) return
@@ -292,6 +304,30 @@ export default function Settings() {
             <span className="text-sm">Haptics (vibration)</span>
             <input type="checkbox" checked={haptics} onChange={toggleHaptics} className="w-5 h-5 accent-primary" />
           </label>
+          <div className="h-px bg-border" />
+          <button
+            type="button"
+            onClick={handleTestSound}
+            disabled={soundTest === 'testing'}
+            className="w-full h-11 flex items-center justify-center gap-2 bg-bg border border-border text-text font-semibold rounded-lg active:scale-[0.98] transition-transform disabled:opacity-60"
+          >
+            <Volume2 size={18} />
+            {soundTest === 'testing' ? 'Starting sound...' : 'Test sound'}
+          </button>
+          {soundTest !== 'idle' && soundTest !== 'testing' && (
+            <div className="space-y-2">
+              <p className={`text-xs ${soundTest === 'accepted' ? 'text-green' : 'text-yellow'}`}>
+                {soundTest === 'accepted' ? 'Playback accepted by iOS' : 'Playback blocked by iOS'}
+              </p>
+              <audio
+                controls
+                playsInline
+                preload="auto"
+                src="/complete.mp3"
+                className="w-full h-10"
+              />
+            </div>
+          )}
           <p className="text-text-dim text-[10px]">
             iOS only vibrates web apps within ~1s of a tap — timer cues (rest end, completion) can't buzz; sound covers those.
           </p>
