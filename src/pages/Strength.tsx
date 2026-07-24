@@ -266,14 +266,14 @@ export default function Strength() {
   return (
     <div className="flex-1 flex flex-col px-4 py-4 gap-4">
       {/* Progress header + explicit End control */}
-      <div className="relative">
+      <div className="relative min-h-11 flex items-center justify-center">
         <p className="text-text-dim text-xs text-center py-1">
           Step {index + 1} of {totalSteps}
         </p>
         <button
           onClick={handleFinish}
           aria-label="Finish workout"
-          className="absolute right-0 top-1/2 -translate-y-1/2 text-text-dim text-xs border border-border rounded-full px-3 py-1 active:opacity-70"
+          className="absolute right-0 top-1/2 -translate-y-1/2 h-11 text-text-dim text-xs border border-border rounded-full px-4 active:bg-surface-2"
         >
           Finish
         </button>

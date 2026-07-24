@@ -15,7 +15,7 @@ export default function Header() {
 
   return (
     <header
-      className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0"
+      className="flex items-center justify-between px-3 py-2 border-b border-border bg-bg shrink-0 z-20"
       style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}
     >
       {onDashboard ? (
@@ -35,7 +35,7 @@ export default function Header() {
         <button
           onClick={() => requestExit('/')}
           aria-label="Back to dashboard"
-          className="flex items-center gap-1 text-text font-semibold active:opacity-70 transition-opacity -ml-1"
+          className="h-11 min-w-24 px-2 flex items-center gap-1 text-text font-semibold active:bg-surface rounded-lg transition-colors"
         >
           <ChevronLeft size={24} />
           <span className="text-sm">Back</span>
@@ -49,7 +49,7 @@ export default function Header() {
         <button
           onClick={() => requestExit(isSettings ? '/' : '/settings')}
           aria-label={isSettings ? 'Close settings' : 'Open settings'}
-          className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm active:scale-95 transition-transform"
+          className="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm active:scale-95 transition-transform"
         >
           {isSettings ? (
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

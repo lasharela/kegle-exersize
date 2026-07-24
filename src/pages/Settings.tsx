@@ -118,11 +118,11 @@ export default function Settings() {
     <div>
       <h2 className="font-semibold mb-3">Sound & Haptics</h2>
       <div className="bg-surface rounded-xl p-4 space-y-3">
-        <label className="flex items-center justify-between cursor-pointer">
+        <label className="min-h-11 flex items-center justify-between cursor-pointer">
           <span className="text-sm">Sound</span>
           <input type="checkbox" checked={sound} onChange={toggleSound} className="w-5 h-5 accent-primary" />
         </label>
-        <label className="flex items-center justify-between cursor-pointer">
+        <label className="min-h-11 flex items-center justify-between cursor-pointer">
           <span className="text-sm">Haptics (vibration)</span>
           <input type="checkbox" checked={haptics} onChange={toggleHaptics} className="w-5 h-5 accent-primary" />
         </label>

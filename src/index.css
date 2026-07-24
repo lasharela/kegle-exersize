@@ -37,4 +37,42 @@ body {
   height: 100%;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+button,
+[role='button'],
+input,
+select {
+  touch-action: manipulation;
+}
+
+button {
+  min-height: 44px;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+button[aria-label] {
+  min-width: 44px;
+}
+
+input,
+select {
+  min-height: 44px;
+}
+
+input[type='checkbox'] {
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+}
+
+@supports (height: 100dvh) {
+  body,
+  #root {
+    height: 100dvh;
+  }
 }

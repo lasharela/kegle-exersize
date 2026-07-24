@@ -40,14 +40,14 @@ export default function ActivityCard({ icon, label, subtitle, scheduled, done, o
       ) : scheduled ? (
         <button
           onClick={onStart}
-          className="bg-primary text-white font-bold text-sm rounded-lg px-4 py-2 active:scale-95 transition-transform"
+          className="min-w-16 h-11 bg-primary text-white font-bold text-sm rounded-lg px-4 active:scale-95 transition-transform"
         >
           Start
         </button>
       ) : (
         <button
           onClick={onStart}
-          className="border border-border text-text-dim font-semibold text-sm rounded-lg px-4 py-2 active:scale-95 transition-transform"
+          className="min-w-16 h-11 border border-border text-text-dim font-semibold text-sm rounded-lg px-4 active:scale-95 transition-transform"
         >
           Start
         </button>
