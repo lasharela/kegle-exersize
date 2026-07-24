@@ -15,7 +15,6 @@ import { WEIGHT } from '../lib/program'
 import type { ActivityLog, Exercise, WeightLog } from '../lib/types'
 import StatsHeader from '../components/StatsHeader'
 import ActivityCard from '../components/ActivityCard'
-import RingerHint from '../components/RingerHint'
 
 type ActivityMeta = { icon: string; label: string; subtitle: string; route: string }
 
@@ -118,8 +117,6 @@ export default function Dashboard() {
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
-      <RingerHint />
-
       {shieldSavedDates.length > 0 && (
         <div className="bg-surface border border-blue/40 rounded-xl px-4 py-3 text-sm">
           🛡 A shield saved your streak ({shieldSavedDates.map(fmtBannerDate).join(', ')})
