@@ -40,16 +40,21 @@ export function startExercise(state: ExerciseState): ExerciseState {
   return { ...state, phase: 'countdown', timeRemaining: COUNTDOWN_SECONDS }
 }
 
-export function tick(state: ExerciseState): ExerciseState {
+export function tick(state: ExerciseState, deltaS = TICK_S): ExerciseState {
   if (state.isPaused || state.phase === 'idle' || state.phase === 'completed') return state
 
-  const next = state.timeRemaining - TICK_S
+  let nextState = state
+  let remainingDelta = Math.max(0, deltaS)
 
-  if (next > TICK_S / 2) {
-    return { ...state, timeRemaining: next }
+  while (remainingDelta > 0 && nextState.phase !== 'completed') {
+    if (remainingDelta + TICK_S / 2 < nextState.timeRemaining) {
+      return { ...nextState, timeRemaining: nextState.timeRemaining - remainingDelta }
+    }
+    remainingDelta = Math.max(0, remainingDelta - nextState.timeRemaining)
+    nextState = advancePhase(nextState)
   }
 
-  return advancePhase(state)
+  return nextState
 }
 
 export function skipPhase(state: ExerciseState): ExerciseState {

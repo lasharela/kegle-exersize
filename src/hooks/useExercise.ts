@@ -9,8 +9,8 @@ export function useExercise(target: number, pulseIntervalMs: number) {
   const isActive = state.phase !== 'idle' && state.phase !== 'completed' && !state.isPaused
   const { elapsed, reset: resetElapsed } = useElapsed(isActive)
 
-  const handleTick = useCallback(() => {
-    setState((prev) => tick(prev))
+  const handleTick = useCallback((deltaMs: number) => {
+    setState((prev) => tick(prev, deltaMs / 1000))
   }, [])
 
   useTimer(handleTick, TICK_MS, isActive)

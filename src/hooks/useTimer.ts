@@ -1,21 +1,29 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 
-export function useTimer(onTick: () => void, intervalMs: number, active: boolean) {
+export function useTimer(onTick: (deltaMs: number) => void, intervalMs: number, active: boolean) {
   const tickRef = useRef(onTick)
   useEffect(() => { tickRef.current = onTick })
 
   const intervalRef = useRef<number | null>(null)
+  const lastTickRef = useRef<number | null>(null)
 
   const stop = useCallback(() => {
     if (intervalRef.current !== null) {
       clearInterval(intervalRef.current)
       intervalRef.current = null
     }
+    lastTickRef.current = null
   }, [])
 
   useEffect(() => {
     if (active) {
-      intervalRef.current = window.setInterval(() => tickRef.current(), intervalMs)
+      lastTickRef.current = performance.now()
+      intervalRef.current = window.setInterval(() => {
+        const now = performance.now()
+        const last = lastTickRef.current ?? now
+        lastTickRef.current = now
+        tickRef.current(Math.min(now - last, 1000))
+      }, intervalMs)
     } else {
       stop()
     }
